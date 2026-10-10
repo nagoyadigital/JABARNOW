@@ -9,25 +9,62 @@ import {
 } from "@/components/public/news-cards";
 import { JabarHariIni, KategoriPilihan } from "@/components/public/home-sections";
 import {
-  heroMain,
-  heroSecondary,
-  latestArticles,
-  mostRead24h,
-  mostRead7d,
-  jabarHariIni,
+  listLatestPublished,
+  listMostRead,
+  cardToArticle,
+} from "@/lib/articles";
+import type { Article } from "@/lib/types";
+import {
+  heroMain as sHeroMain,
+  heroSecondary as sHeroSecondary,
+  latestArticles as sLatest,
+  mostRead24h as sMostRead24h,
+  mostRead7d as sMostRead7d,
+  jabarHariIni as sJabarHariIni,
   featuredCategories,
-  breakingItems,
+  breakingItems as sBreaking,
 } from "@/lib/sample-content";
 
+// Data dari DB saat request → route blocking (Cache Components).
+export const instant = false;
+
 /**
- * Homepage — Tahap 2 (komposisi penuh, data CONTOH).
+ * Homepage — komposisi penuh, data NYATA dari database.
+ * Fallback ke konten contoh bila DB kosong (belum ada artikel published).
  * Urutan sesuai 02-HOMEPAGE-DESKTOP.md & 03-HOMEPAGE-MOBILE.md.
- * Data nyata dari database menyusul di Tahap 3.
  */
-export default function HomePage() {
+export default async function HomePage() {
+  const [latestDb, read24, read7] = await Promise.all([
+    listLatestPublished(12),
+    listMostRead(24, 5),
+    listMostRead(24 * 7, 5),
+  ]);
+
+  const hasData = latestDb.length > 0;
+  const latestArticles: Article[] = hasData
+    ? latestDb.map(cardToArticle)
+    : sLatest;
+
+  // Hero: artikel terbaru pertama + 2 berikutnya (atau fallback)
+  const heroMain = hasData ? latestArticles[0] : sHeroMain;
+  const heroSecondary = hasData ? latestArticles.slice(1, 3) : sHeroSecondary;
+  // Sisanya untuk Berita Terbaru
+  const feed = hasData ? latestArticles.slice(3) : latestArticles;
+
+  const mostRead24h = read24.length ? read24.map(cardToArticle) : sMostRead24h;
+  const mostRead7d = read7.length ? read7.map(cardToArticle) : sMostRead7d;
+
+  // Jabar Hari Ini: artikel ber-wilayah (atau fallback)
+  const regionArticles = latestArticles.filter((a) => a.region).slice(0, 4);
+  const jabarHariIni = regionArticles.length >= 2 ? regionArticles : sJabarHariIni;
+
+  const breakingItems = hasData
+    ? latestArticles.slice(0, 3).map((a) => ({ label: a.title, href: `/artikel/${a.slug}` }))
+    : sBreaking;
+
   // Berita terbaru: 3 kartu bergambar (grid) + sisanya list horizontal (mixed)
-  const gridLatest = latestArticles.slice(0, 3);
-  const listLatest = latestArticles.slice(3);
+  const gridLatest = feed.slice(0, 3);
+  const listLatest = feed.slice(3);
 
   return (
     <>
@@ -73,7 +110,7 @@ export default function HomePage() {
 
               {/* Mobile: seluruh daftar sebagai list horizontal (03-HOMEPAGE-MOBILE.md) */}
               <div className="divide-y divide-line sm:hidden">
-                {latestArticles.map((article) => (
+                {feed.map((article) => (
                   <HorizontalNewsRow key={article.slug} article={article} />
                 ))}
               </div>

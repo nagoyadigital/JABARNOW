@@ -4,6 +4,24 @@ import { prisma } from "@/lib/prisma";
  * Query artikel publik (hanya PUBLISHED). Fallback aman saat DB belum ada.
  */
 
+import type { Article } from "@/lib/types";
+
+/** Petakan ArticleCard (DB) → tipe Article untuk komponen kartu/hero. */
+export function cardToArticle(c: ArticleCard): Article {
+  return {
+    slug: c.slug,
+    title: c.title,
+    excerpt: c.excerpt ?? undefined,
+    image: c.cover?.url ?? null,
+    category: c.category
+      ? { slug: c.category.slug, name: c.category.name }
+      : { slug: "umum", name: "Umum" },
+    region: c.region ? { slug: c.region.slug, name: c.region.name } : undefined,
+    author: { slug: "author", name: c.author.name },
+    publishedAt: (c.publishedAt ?? new Date()).toISOString(),
+  };
+}
+
 export async function getPublishedArticleBySlug(slug: string) {
   try {
     return await prisma.article.findFirst({
@@ -41,6 +59,35 @@ const cardSelect = {
   author: { select: { name: true } },
   cover: { select: { url: true, alt: true } },
 } as const;
+
+/** Ambil N artikel published terbaru (untuk homepage). */
+export async function listLatestPublished(take = 12): Promise<ArticleCard[]> {
+  try {
+    return (await prisma.article.findMany({
+      where: { status: "PUBLISHED" },
+      select: cardSelect,
+      orderBy: { publishedAt: "desc" },
+      take,
+    })) as ArticleCard[];
+  } catch {
+    return [];
+  }
+}
+
+/** Most Read sederhana (sementara: terbaru per rentang; nanti berbasis views). */
+export async function listMostRead(sinceHours: number, take = 5): Promise<ArticleCard[]> {
+  const since = new Date(Date.now() - sinceHours * 3600_000);
+  try {
+    return (await prisma.article.findMany({
+      where: { status: "PUBLISHED", publishedAt: { gte: since } },
+      select: cardSelect,
+      orderBy: [{ viewCount: "desc" }, { publishedAt: "desc" }],
+      take,
+    })) as ArticleCard[];
+  } catch {
+    return [];
+  }
+}
 
 export async function listPublishedByCategory(slug: string): Promise<ArticleCard[]> {
   try {
