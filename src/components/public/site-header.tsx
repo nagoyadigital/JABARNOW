@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { WibDate } from "@/components/common/wib-date";
 import { MobileMenu } from "@/components/public/mobile-menu";
+import { SearchIcon } from "@/components/common/icons";
 import { mainCategories } from "@/lib/navigation";
 
 /**
@@ -18,15 +19,13 @@ export function SiteHeader() {
         <div className="container-jn flex h-[var(--h-header-mobile)] items-center justify-between">
           <MobileMenu />
           <BrandLogo height={32} priority />
-          <button
-            type="button"
-            aria-label="Buka pencarian"
-            className="flex h-10 w-10 items-center justify-center rounded-md text-charcoal"
+          <Link
+            href="/cari"
+            aria-label="Pencarian"
+            className="flex h-10 w-10 items-center justify-center rounded-md text-charcoal transition-colors hover:text-brand"
           >
-            <span aria-hidden="true" className="text-lg">
-              ⌕
-            </span>
-          </button>
+            <SearchIcon className="h-5 w-5" />
+          </Link>
         </div>
       </div>
 
@@ -96,13 +95,13 @@ export function SiteHeader() {
                 </li>
               </ul>
             </nav>
-            <button
-              type="button"
-              className="rounded-md px-3 py-1.5 text-sm text-white/90 transition-colors hover:text-brand"
-              aria-label="Buka pencarian"
+            <Link
+              href="/cari"
+              aria-label="Pencarian"
+              className="flex h-8 w-8 items-center justify-center rounded-md text-white/90 transition-colors hover:bg-white/10 hover:text-brand"
             >
-              Cari
-            </button>
+              <SearchIcon className="h-5 w-5" />
+            </Link>
           </div>
         </div>
       </div>

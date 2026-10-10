@@ -101,3 +101,25 @@ export const breakingItems = [
   { label: "Contoh breaking news kedua", href: "#" },
   { label: "Contoh breaking news ketiga", href: "#" },
 ];
+
+/**
+ * Artikel contoh untuk pratinjau halaman Detail Artikel (dipakai sebagai
+ * fallback saat DB belum tersambung). Konten HTML sederhana & aman.
+ */
+export const sampleArticleDetail = {
+  slug: "contoh-artikel-1",
+  title: "Judul Berita Utama Contoh untuk Pratinjau Komposisi Hero Overlay",
+  excerpt:
+    "Ringkasan contoh untuk pratinjau tata letak detail artikel beserta posisi iklan di dalam badan berita.",
+  category: { name: "Berita", slug: "berita" },
+  region: { name: "Kota Bandung", slug: "kota-bandung" },
+  authorName: "Redaksi",
+  publishedAt: new Date(Date.now() - 2 * 3600_000).toISOString(),
+  // HTML badan artikel (sudah aman; sanitasi tetap jalan di render nyata)
+  paragraphs: [
+    "Ini adalah paragraf pembuka contoh untuk memperlihatkan bagaimana badan artikel ditampilkan pada halaman Detail Artikel JabarNow!. Teks ini placeholder dan akan diganti konten redaksi nyata melalui CMS.",
+    "Paragraf kedua menunjukkan alur baca yang nyaman dengan ukuran tipografi sesuai design tokens. Redaksi dapat menyisipkan heading, kutipan, gambar, tabel, dan tautan melalui block editor.",
+    "Paragraf ketiga melanjutkan narasi. Di antara paragraf, redaksi dapat menempatkan slot iklan in-article secara manual sesuai kebijakan monetisasi.",
+    "Paragraf penutup contoh. Pada implementasi nyata, konten berasal dari database dan dirender sebagai HTML tersanitasi untuk mencegah XSS.",
+  ],
+};
