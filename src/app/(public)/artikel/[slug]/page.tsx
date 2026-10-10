@@ -17,6 +17,7 @@ import { ArticleArchiveList } from "@/components/public/article-list";
 import { SectionHeading } from "@/components/public/section-heading";
 import { MostRead } from "@/components/public/most-read";
 import { getApprovedComments } from "@/app/(public)/artikel/comment-actions";
+import { areCommentsEnabled } from "@/lib/settings";
 import { sampleArticleDetail, mostRead24h, mostRead7d } from "@/lib/sample-content";
 
 export const instant = false;
@@ -130,10 +131,11 @@ export default async function ArticleDetailPage({
   const html = renderArticleHtml(article.contentJson);
   const url = `${siteConfig.url}/artikel/${article.slug}`;
   const publishedIso = article.publishedAt?.toISOString();
-  const [related, comments] = await Promise.all([
+  const [related, commentsOn] = await Promise.all([
     getRelatedArticles(article.slug, article.category?.slug),
-    getApprovedComments(article.id),
+    areCommentsEnabled(),
   ]);
+  const comments = commentsOn ? await getApprovedComments(article.id) : [];
   // Perkiraan waktu baca dari teks konten (strip tag)
   const readMin = readingTimeMinutes(html.replace(/<[^>]+>/g, " "));
 
@@ -206,16 +208,14 @@ export default async function ArticleDetailPage({
         dangerouslySetInnerHTML={{ __html: html }}
       />
 
-      <div className="mt-8">
-        <AuthorCard name={article.author.name} />
-      </div>
-
-      <div className="mt-6 flex items-center justify-between gap-3 border-t border-line pt-6">
-        <ShareBar title={article.title} />
-      </div>
-
-      <div className="mt-6 border-t border-line pt-6">
+      {/* Reaksi emote (selalu aktif, wajib login) */}
+      <div className="mt-8 border-t border-line pt-6">
         <ArticleReactions articleId={article.id} />
+      </div>
+
+      {/* Author (satu kali) */}
+      <div className="mt-6">
+        <AuthorCard name={article.author.name} />
       </div>
 
       {related.length > 0 && (
@@ -225,13 +225,16 @@ export default async function ArticleDetailPage({
         </div>
       )}
 
-      <Comments
-        articleId={article.id}
-        initialComments={comments.map((c) => ({
-          ...c,
-          createdAt: c.createdAt.toISOString(),
-        }))}
-      />
+      {/* Komentar hanya bila diaktifkan via CMS Website Settings */}
+      {commentsOn && (
+        <Comments
+          articleId={article.id}
+          initialComments={comments.map((c) => ({
+            ...c,
+            createdAt: c.createdAt.toISOString(),
+          }))}
+        />
+      )}
     </ArticleShell>
   );
 }
@@ -299,23 +302,15 @@ function SampleArticle() {
         ))}
       </div>
 
-      {/* Author */}
-      <div className="mt-8">
-        <AuthorCard name={a.authorName} />
-      </div>
-
-      {/* Share bawah */}
-      <div className="mt-6 border-t border-line pt-6">
-        <ShareBar title={a.title} />
-      </div>
-
-      {/* Reaksi */}
-      <div className="mt-6 border-t border-line pt-6">
+      {/* Reaksi emote (selalu aktif) */}
+      <div className="mt-8 border-t border-line pt-6">
         <ArticleReactions articleId={a.slug} />
       </div>
 
-      {/* Komentar (preview: kosong, kirim butuh login + DB) */}
-      <Comments articleId={a.slug} initialComments={[]} />
+      {/* Author (satu kali) */}
+      <div className="mt-6">
+        <AuthorCard name={a.authorName} />
+      </div>
 
       <p className="mt-6 rounded-md bg-muted p-3 text-xs text-charcoal/50">
         Ini pratinjau artikel contoh (data belum dari database). Konten &amp;

@@ -11,6 +11,7 @@ type General = {
   tagline: string;
   contactEmail: string;
   gscVerification: string;
+  commentsEnabled: boolean;
 };
 
 async function loadGeneral(): Promise<General> {
@@ -19,6 +20,7 @@ async function loadGeneral(): Promise<General> {
     tagline: siteConfig.tagline,
     contactEmail: "",
     gscVerification: "",
+    commentsEnabled: false,
   };
   try {
     const row = await prisma.setting.findUnique({ where: { key: "general" } });

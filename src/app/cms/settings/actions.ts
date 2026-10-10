@@ -17,6 +17,7 @@ const schema = z.object({
   tagline: z.string().max(160).optional(),
   contactEmail: z.string().email().optional().or(z.literal("")),
   gscVerification: z.string().max(200).optional(),
+  commentsEnabled: z.boolean().optional(),
 });
 
 export type SettingsState = { ok?: boolean; error?: string };

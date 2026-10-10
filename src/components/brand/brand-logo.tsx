@@ -22,14 +22,14 @@ export function BrandLogo({
       aria-label={`${siteConfig.name} — beranda`}
       className={className}
     >
-      {/* width:auto menjaga rasio asli; height mengontrol tinggi tampil */}
+      {/* height & width:auto menjaga rasio asli; height mengontrol tinggi tampil */}
       <Image
         src={siteConfig.logo.src}
         alt={siteConfig.logo.alt}
         height={height}
         width={height * 4}
         priority={priority}
-        style={{ height, width: "auto" }}
+        style={{ height: `${height}px`, width: "auto" }}
       />
     </Link>
   );

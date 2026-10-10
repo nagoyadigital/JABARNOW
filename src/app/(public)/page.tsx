@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { Hero } from "@/components/public/hero";
 import { BreakingTicker } from "@/components/public/breaking-ticker";
 import { MostRead } from "@/components/public/most-read";
@@ -34,6 +35,7 @@ export const instant = false;
  * Urutan sesuai 02-HOMEPAGE-DESKTOP.md & 03-HOMEPAGE-MOBILE.md.
  */
 export default async function HomePage() {
+  await connection(); // render di request time (DB + Date.now di Most Read)
   const [latestDb, read24, read7] = await Promise.all([
     listLatestPublished(12),
     listMostRead(24, 5),

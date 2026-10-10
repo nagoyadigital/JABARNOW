@@ -76,6 +76,25 @@ async function main() {
 
     const publishedAt = new Date(Date.now() - spec.hoursAgo * 3600_000);
 
+    // Cover DEMO dari picsum (deterministik via seed = slug). Ganti via CMS nanti.
+    const coverUrl = `https://picsum.photos/seed/${slug}/1200/675`;
+    const storageKey = `demo/${slug}.jpg`;
+    const cover = await prisma.mediaAsset.upsert({
+      where: { storageKey },
+      update: { url: coverUrl },
+      create: {
+        storageKey,
+        url: coverUrl,
+        fileName: `${slug}.jpg`,
+        mimeType: "image/jpeg",
+        sizeBytes: 0,
+        width: 1200,
+        height: 675,
+        alt: spec.title,
+        uploaderId: admin.id,
+      },
+    });
+
     await prisma.article.upsert({
       where: { slug },
       update: {
@@ -83,6 +102,8 @@ async function main() {
         publishedAt,
         categoryId: category?.id ?? null,
         regionId: region?.id ?? null,
+        coverMediaId: cover.id,
+        coverAlt: spec.title,
       },
       create: {
         slug,
@@ -95,6 +116,8 @@ async function main() {
         authorId: admin.id,
         categoryId: category?.id ?? null,
         regionId: region?.id ?? null,
+        coverMediaId: cover.id,
+        coverAlt: spec.title,
         seoTitle: spec.title,
         seoDescription:
           "Berita contoh JabarNow! untuk pratinjau tampilan homepage dan detail artikel.",

@@ -8,6 +8,7 @@ type General = {
   tagline: string;
   contactEmail: string;
   gscVerification: string;
+  commentsEnabled: boolean;
 };
 
 export function SettingsForm({ initial }: { initial: General }) {
@@ -15,8 +16,10 @@ export function SettingsForm({ initial }: { initial: General }) {
   const [msg, setMsg] = useState("");
   const [pending, start] = useTransition();
 
-  const set = (k: keyof General) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  const setText =
+    (k: "siteName" | "tagline" | "contactEmail" | "gscVerification") =>
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const submit = () =>
     start(async () => {
@@ -33,22 +36,40 @@ export function SettingsForm({ initial }: { initial: General }) {
       <div className="space-y-3">
         <label className="block">
           <span className="mb-1 block text-xs text-charcoal/60">Nama Website</span>
-          <input value={form.siteName} onChange={set("siteName")} className={field} />
+          <input value={form.siteName} onChange={setText("siteName")} className={field} />
         </label>
         <label className="block">
           <span className="mb-1 block text-xs text-charcoal/60">Tagline</span>
-          <input value={form.tagline} onChange={set("tagline")} className={field} />
+          <input value={form.tagline} onChange={setText("tagline")} className={field} />
         </label>
         <label className="block">
           <span className="mb-1 block text-xs text-charcoal/60">Email Kontak</span>
-          <input value={form.contactEmail} onChange={set("contactEmail")} className={field} />
+          <input value={form.contactEmail} onChange={setText("contactEmail")} className={field} />
         </label>
         <label className="block">
           <span className="mb-1 block text-xs text-charcoal/60">
             Google Search Console Verification
           </span>
-          <input value={form.gscVerification} onChange={set("gscVerification")} className={field} />
+          <input value={form.gscVerification} onChange={setText("gscVerification")} className={field} />
         </label>
+
+        {/* Toggle fitur komentar publik */}
+        <label className="flex items-center justify-between gap-3 rounded-md border border-line p-3">
+          <span>
+            <span className="block text-sm font-medium">Kolom Komentar Publik</span>
+            <span className="block text-xs text-charcoal/50">
+              Jika aktif, pembaca (login) bisa berkomentar di artikel. Reaksi emote
+              selalu aktif.
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            checked={form.commentsEnabled}
+            onChange={(e) => setForm((f) => ({ ...f, commentsEnabled: e.target.checked }))}
+            className="h-5 w-5 shrink-0 accent-[var(--color-brand)]"
+          />
+        </label>
+
         <div className="rounded-md bg-muted p-3 text-xs text-charcoal/60">
           Timezone editorial: <strong>Asia/Jakarta (WIB)</strong> · Bahasa:
           Indonesia. Logo &amp; favicon serta visual tokens hanya dapat diubah
