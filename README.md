@@ -91,7 +91,43 @@ npm run lint           # ESLint
 Lihat `.env.example` untuk daftar lengkap (Supabase, Cloudflare R2, Auth.js,
 GA4/GSC opsional). File `.env` tidak di-commit.
 
-### Status Tahap 1
-- Scaffold, design tokens, fonts, shell publik & CMS: **selesai**.
-- Build dan lint: **lulus**.
-- Homepage lengkap & fitur backend: tahap berikutnya (menunggu lanjut).
+### Status pengembangan (Tahap 1–6 selesai)
+- **Tahap 1** Design foundation: tokens, fonts, shell publik & CMS. ✓
+- **Tahap 2** Homepage publik desktop V2.0 & mobile V2.1. ✓
+- **Tahap 3** CMS foundation: Prisma + Auth.js + RBAC 8 role + audit log. ✓
+- **Tahap 4** Editorial: Tiptap block editor, Media Library (R2), workflow
+  Simple/Advanced, review queue, scheduling WIB, autosave, sanitasi. ✓
+- **Tahap 5** SEO Manager (sitemap/news-sitemap/schema/redirect), Ads Manager
+  (manual placement + jadwal), Analytics (GA4 integration-ready). ✓
+- **Tahap 6** Halaman publik sisa (kategori/wilayah/author/search/legal),
+  Users & Roles, Settings, Komentar, Audit Log, mobile CMS. ✓
+- Build & lint: **lulus** di setiap tahap.
+
+### Dependency utama
+- Next.js 16, React 19, TypeScript, Tailwind v4
+- Prisma 6 + PostgreSQL (Supabase)
+- Auth.js v5 (NextAuth) + bcryptjs
+- Tiptap (block editor) + isomorphic-dompurify (sanitasi)
+- @aws-sdk/client-s3 (Cloudflare R2, S3-compatible)
+- zod (validasi)
+
+### Mengaktifkan database & storage (yang perlu Anda lakukan)
+1. **Supabase**: buat project → salin `DATABASE_URL` (pooled) & `DIRECT_URL`
+   (direct) ke `.env`.
+2. **Super Admin**: isi `SEED_SUPERADMIN_EMAIL` & `SEED_SUPERADMIN_PASSWORD`.
+3. Jalankan: `npm run db:migrate` lalu `npm run db:seed`.
+4. **Cloudflare R2**: buat bucket + API token → isi `R2_*` di `.env` untuk
+   mengaktifkan upload media.
+5. **Auth**: generate `AUTH_SECRET` (`npx auth secret`), set `AUTH_URL`.
+6. Login di `/login` → masuk CMS di `/cms`.
+
+### Opsional (colok kapan saja)
+- `NEXT_PUBLIC_GA4_MEASUREMENT_ID` → aktifkan Google Analytics 4.
+- `GSC_VERIFICATION` → verifikasi Google Search Console. Submit
+  `https://jabarnow.id/sitemap.xml` & `/news-sitemap.xml` di GSC.
+
+### Push ke GitHub (butuh akun Anda)
+```bash
+# repo & commit sudah siap lokal; tinggal autentikasi lalu:
+git push -u origin main
+```
