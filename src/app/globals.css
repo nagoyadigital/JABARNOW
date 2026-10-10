@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/*
+ * JabarNow! — Design Tokens V2.1 (LOCKED)
+ * Source of truth: docs/jabarnow/01-DESIGN-TOKENS.md
+ * Do NOT change colors, fonts, spacing, or radius without Super Admin approval.
+ */
+
+@theme {
+  /* --- Warna terkunci --- */
+  --color-brand: #f4511e; /* brand.primary: CTA, aksen aktif, angka Most Read */
+  --color-breaking: #c62828; /* editorial.breaking: breaking news, peringatan */
+  --color-charcoal: #17191d; /* text.primary / surface.charcoal: teks, nav, footer */
+  --color-base: #ffffff; /* surface.base: kanvas utama */
+  --color-muted: #f7f8fa; /* surface.muted: section alternatif */
+  --color-line: #e5e7eb; /* border.default: garis pembatas */
+
+  /* --- Tipografi --- */
+  --font-heading: var(--font-plus-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* Ukuran tipografi (baseline desain, diuji saat implementasi) */
+  --text-hero-desktop: 38px;
+  --text-hero-mobile: 26px;
+  --text-section-desktop: 24px;
+  --text-section-mobile: 21px;
+  --text-card-desktop: 18px;
+  --text-card-mobile: 16px;
+  --text-article-desktop: 18px;
+  --text-article-mobile: 17px;
+  --text-meta: 12px;
+
+  /* --- Grid dan ruang --- */
+  --container-max: 1200px;
+  --gap-desktop: 24px;
+  --gap-mobile: 16px;
+  --section-gap-desktop: 48px;
+  --section-gap-mobile: 28px;
+
+  /* --- Radius --- */
+  --radius-card: 10px;
+
+  /* --- Ukuran baseline shell (diuji saat implementasi) --- */
+  --h-topbar: 32px;
+  --h-header-desktop: 104px;
+  --h-nav-desktop: 48px;
+  --h-ticker: 42px;
+  --h-header-mobile: 56px;
+  --h-bottomnav-mobile: 64px;
+  --w-cms-sidebar: 248px;
+}
+
+:root {
+  --background: var(--color-base);
+  --foreground: var(--color-charcoal);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+/* Container utama maksimal 1200px, margin 16px di mobile */
+.container-jn {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+/* Hormati prefers-reduced-motion (04-COMPONENTS-AND-STATES.md) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Fokus keyboard yang terlihat (aksesibilitas) */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
