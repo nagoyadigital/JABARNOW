@@ -40,7 +40,7 @@ export function StandardNewsCard({
         </div>
         <div className="p-4">
           <CategoryTag name={article.category.name} />
-          <h3 className="mt-2 text-[var(--text-card-mobile)] font-bold leading-snug md:text-[var(--text-card-desktop)] group-hover:text-brand">
+          <h3 className="mt-2 text-[length:var(--text-card-mobile)] font-bold leading-snug md:text-[length:var(--text-card-desktop)] group-hover:text-brand">
             {article.title}
           </h3>
           <Meta article={article} />
@@ -67,7 +67,7 @@ export function HorizontalNewsRow({ article }: { article: Article }) {
         </div>
         <div className="min-w-0 flex-1">
           <CategoryTag name={article.category.name} />
-          <h3 className="mt-1 line-clamp-3 text-[var(--text-card-mobile)] font-bold leading-snug group-hover:text-brand">
+          <h3 className="mt-1 line-clamp-3 text-[length:var(--text-card-mobile)] font-bold leading-snug group-hover:text-brand">
             {article.title}
           </h3>
           <Meta article={article} />

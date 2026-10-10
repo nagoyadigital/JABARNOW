@@ -95,7 +95,7 @@ export default async function ArticleDetailPage({
             {article.category.name}
           </Link>
         )}
-        <h1 className="mt-2 text-3xl font-extrabold leading-tight md:text-[var(--text-hero-desktop)]">
+        <h1 className="mt-2 text-3xl font-extrabold leading-tight md:text-[length:var(--text-hero-desktop)]">
           {article.title}
         </h1>
         <p className="mt-3 text-sm text-charcoal/60">
@@ -118,7 +118,7 @@ export default async function ArticleDetailPage({
         )}
 
         <div
-          className="prose-article mt-6 space-y-4 text-[var(--text-article-mobile)] leading-relaxed md:text-[var(--text-article-desktop)]"
+          className="prose-article mt-6 space-y-4 text-[length:var(--text-article-mobile)] leading-relaxed md:text-[length:var(--text-article-desktop)]"
           dangerouslySetInnerHTML={{ __html: html }}
         />
 
