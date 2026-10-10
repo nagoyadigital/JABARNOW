@@ -30,7 +30,7 @@ export const cmsNavGroups: CmsNavGroup[] = [
       { label: "Kategori", href: "/cms/kategori" },
       { label: "Wilayah", href: "/cms/wilayah" },
       { label: "Tag", href: "/cms/tag" },
-      { label: "Komentar", href: "/cms/komentar" },
+      { label: "Komentar", href: "/cms/komentar", permission: "comments.moderate" },
     ],
   },
   {

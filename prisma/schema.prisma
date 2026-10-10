@@ -1,0 +1,399 @@
+// JabarNow! — Skema database (Tahap 3)
+// Source of truth produk: docs/jabarnow/*.md
+// Database: PostgreSQL (Supabase). Storage media: Cloudflare R2 (bukan di DB).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================
+// RBAC — 8 role tetap + permission granular (09-CMS-REVIEW-AND-PERMISSIONS)
+// ============================================================
+
+enum Role {
+  SUPER_ADMIN // Super Admin
+  ADMINISTRATOR // Administrator
+  PEMIMPIN_REDAKSI // Pemimpin Redaksi
+  EDITOR // Editor
+  REPORTER // Reporter
+  CONTRIBUTOR // Contributor
+  ADS_MANAGER // Ads Manager
+  SEO_MANAGER // SEO Manager
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  INVITED
+}
+
+// ============================================================
+// Auth.js (NextAuth) + User
+// ============================================================
+
+model User {
+  id            String     @id @default(cuid())
+  name          String
+  email         String     @unique
+  emailVerified DateTime?
+  image         String?
+  // Hash password (bcrypt). Null untuk user yang hanya diundang/sosial.
+  passwordHash  String?
+  role          Role       @default(CONTRIBUTOR)
+  status        UserStatus @default(ACTIVE)
+  // Pembaca publik (komentar/reaksi) dibedakan dari staf redaksi via flag ini.
+  isStaff       Boolean    @default(false)
+  lastLoginAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  articles        Article[]        @relation("ArticleAuthor")
+  revisions       ArticleRevision[]
+  reviewActions   ReviewAction[]
+  comments        Comment[]
+  reactions       Reaction[]
+  mediaUploads    MediaAsset[]
+  auditLogs       AuditLog[]
+
+  @@index([role])
+  @@index([status])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================================
+// Taksonomi: Category, Region (27 kab/kota), Tag
+// ============================================================
+
+model Category {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  articles    Article[]
+}
+
+model Region {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  // "KOTA" atau "KABUPATEN"
+  type      String    @default("KOTA")
+  createdAt DateTime  @default(now())
+  articles  Article[]
+}
+
+model Tag {
+  id       String        @id @default(cuid())
+  slug     String        @unique
+  name     String
+  articles ArticleTag[]
+}
+
+model ArticleTag {
+  articleId String
+  tagId     String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, tagId])
+}
+
+// ============================================================
+// Artikel + status editorial + revisi + review
+// ============================================================
+
+enum ArticleStatus {
+  DRAFT
+  SUBMITTED
+  REVISION_REQUESTED
+  APPROVED
+  SCHEDULED
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+model Article {
+  id            String        @id @default(cuid())
+  slug          String        @unique
+  title         String
+  excerpt       String?
+  // Konten block-based (Tiptap) disimpan sebagai JSON tersanitasi.
+  contentJson   Json?
+  // Featured image: referensi aset + focal point
+  coverMediaId  String?
+  coverFocalX   Float?        @default(0.5)
+  coverFocalY   Float?        @default(0.5)
+  coverCaption  String?
+  coverCredit   String?
+  coverAlt      String?
+
+  status        ArticleStatus @default(DRAFT)
+  publishedAt   DateTime?
+  scheduledAt   DateTime?
+
+  authorId      String
+  categoryId    String?
+  regionId      String?
+
+  // SEO per artikel
+  seoTitle       String?
+  seoDescription String?
+  canonicalUrl   String?
+  ogImageUrl     String?
+  focusKeyword   String?
+  noindex        Boolean       @default(false)
+
+  // Metrik hanya jika benar-benar dikumpulkan (bukan dummy)
+  viewCount     Int           @default(0)
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  author     User              @relation("ArticleAuthor", fields: [authorId], references: [id])
+  category   Category?         @relation(fields: [categoryId], references: [id])
+  region     Region?           @relation(fields: [regionId], references: [id])
+  cover      MediaAsset?       @relation("ArticleCover", fields: [coverMediaId], references: [id])
+  tags       ArticleTag[]
+  revisions  ArticleRevision[]
+  reviews    ReviewAction[]
+  comments   Comment[]
+  reactions  Reaction[]
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@index([regionId])
+  @@index([authorId])
+}
+
+model ArticleRevision {
+  id          String   @id @default(cuid())
+  articleId   String
+  editorId    String
+  title       String
+  contentJson Json?
+  note        String?
+  createdAt   DateTime @default(now())
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  editor  User    @relation(fields: [editorId], references: [id])
+
+  @@index([articleId])
+}
+
+enum ReviewDecision {
+  SUBMITTED
+  APPROVED
+  REVISION_REQUESTED
+  REJECTED
+  SCHEDULED
+  PUBLISHED
+}
+
+model ReviewAction {
+  id         String         @id @default(cuid())
+  articleId  String
+  actorId    String
+  decision   ReviewDecision
+  comment    String?
+  createdAt  DateTime       @default(now())
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  actor   User    @relation(fields: [actorId], references: [id])
+
+  @@index([articleId])
+}
+
+// ============================================================
+// Komentar + reaksi (wajib login) — disetujui diaktifkan di V1
+// ============================================================
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Comment {
+  id        String        @id @default(cuid())
+  articleId String
+  userId    String
+  body      String
+  status    CommentStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([articleId, status])
+}
+
+enum ReactionType {
+  LIKE
+  LOVE
+  INSIGHTFUL
+  SAD
+  ANGRY
+}
+
+model Reaction {
+  id        String       @id @default(cuid())
+  articleId String
+  userId    String
+  type      ReactionType
+  createdAt DateTime     @default(now())
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Satu user satu reaksi per artikel (bisa diganti tipenya)
+  @@unique([articleId, userId])
+  @@index([articleId])
+}
+
+// ============================================================
+// Media Library (metadata di DB; file fisik di Cloudflare R2)
+// ============================================================
+
+model MediaAsset {
+  id         String   @id @default(cuid())
+  // Key objek di R2 + URL publik
+  storageKey String   @unique
+  url        String
+  fileName   String
+  mimeType   String
+  sizeBytes  Int
+  width      Int?
+  height     Int?
+  title      String?
+  alt        String?
+  caption    String?
+  credit     String?
+  uploaderId String
+  createdAt  DateTime @default(now())
+
+  uploader       User      @relation(fields: [uploaderId], references: [id])
+  articleCovers  Article[] @relation("ArticleCover")
+
+  @@index([mimeType])
+}
+
+// ============================================================
+// Ads Manager (manual placement + jadwal; tanpa rotasi/targeting otomatis)
+// ============================================================
+
+enum AdCreativeType {
+  IMAGE
+  HTML
+  SCRIPT
+}
+
+enum AdPlacementSlot {
+  HEADER_LEADERBOARD
+  SIDEBAR
+  IN_FEED
+  IN_ARTICLE
+  FOOTER
+  MOBILE_AFTER_HERO
+}
+
+model AdCampaign {
+  id          String          @id @default(cuid())
+  name        String
+  creativeType AdCreativeType
+  // Untuk IMAGE: url gambar + destinationUrl; untuk HTML/SCRIPT: payload
+  imageUrl    String?
+  destinationUrl String?
+  htmlPayload String?
+  placement   AdPlacementSlot
+  isActive    Boolean         @default(false)
+  startAt     DateTime?
+  endAt       DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([placement, isActive])
+}
+
+// ============================================================
+// SEO: redirect 301/302
+// ============================================================
+
+model Redirect {
+  id        String   @id @default(cuid())
+  fromPath  String   @unique
+  toPath    String
+  // 301 atau 302
+  statusCode Int     @default(301)
+  createdAt DateTime @default(now())
+}
+
+// ============================================================
+// Website Settings (key-value) + Audit Log
+// ============================================================
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String?
+  entityId  String?
+  metadata  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
