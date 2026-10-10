@@ -35,6 +35,17 @@ export default function HomePage() {
       <BreakingTicker items={breakingItems} />
 
       <div className="container-jn py-6 md:py-8">
+        {/* Iklan leaderboard (desktop) — contoh posisi di atas hero */}
+        <div className="mb-6 hidden md:block">
+          <AdSlot
+            placement="header-leaderboard"
+            label="Header Leaderboard"
+            size="728×90"
+            height={90}
+            preview
+          />
+        </div>
+
         {/* Hero 1 + 2 statis */}
         <section aria-label="Berita utama" className="mb-8">
           <Hero main={heroMain} secondary={heroSecondary} />
@@ -42,7 +53,13 @@ export default function HomePage() {
 
         {/* Iklan mobile pertama: tepat setelah seluruh area hero */}
         <div className="mb-8 md:hidden">
-          <AdSlot placement="mobile-after-hero" active={false} height={100} />
+          <AdSlot
+            placement="mobile-after-hero"
+            label="Mobile Setelah Hero"
+            size="320×100"
+            height={100}
+            preview
+          />
         </div>
 
         {/* Konten + sidebar (desktop 8:4) */}
@@ -75,7 +92,13 @@ export default function HomePage() {
 
                 {/* Iklan in-feed horizontal di antara blok konten */}
                 <div className="my-6">
-                  <AdSlot placement="in-feed" active={false} height={90} />
+                  <AdSlot
+                    placement="in-feed"
+                    label="In-Feed"
+                    size="728×90"
+                    height={90}
+                    preview
+                  />
                 </div>
 
                 {/* List horizontal (mixed layout) */}
@@ -102,7 +125,13 @@ export default function HomePage() {
           <aside className="lg:col-span-4">
             <div className="lg:sticky lg:top-4 space-y-6">
               <MostRead data24h={mostRead24h} data7d={mostRead7d} />
-              <AdSlot placement="sidebar" active={false} height={250} />
+              <AdSlot
+                placement="sidebar"
+                label="Sidebar (Medium Rectangle)"
+                size="300×250"
+                height={250}
+                preview
+              />
             </div>
           </aside>
         </div>

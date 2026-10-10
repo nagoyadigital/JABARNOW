@@ -1,30 +1,43 @@
 /**
- * AdSlot — placeholder penempatan iklan manual (Tahap 2 visual saja).
- * Reserve height untuk cegah CLS. Nonaktif tidak menyisakan blok kosong besar
- * (10-CMS-MEDIA-AND-ADS.md). Materi iklan nyata & isolasi script di Tahap 5.
+ * AdSlot — placeholder penempatan iklan manual.
+ * - active=false & preview=false → tidak render apa pun (tanpa blok kosong besar).
+ * - preview=true → tampilkan placeholder bergaya untuk MELIHAT posisi iklan
+ *   (pratinjau desain; materi nyata nanti dari Ads Manager / DbAdSlot).
+ * Reserve height untuk cegah CLS (10-CMS-MEDIA-AND-ADS.md).
  */
 export function AdSlot({
   placement,
+  label,
+  size,
   height = 90,
   active = false,
+  preview = false,
   className,
 }: {
   placement: string;
+  label?: string;
+  size?: string;
   height?: number;
   active?: boolean;
+  preview?: boolean;
   className?: string;
 }) {
-  if (!active) return null; // nonaktif: tidak render blok kosong
+  // Tanpa aktif & tanpa preview → tidak render blok
+  if (!active && !preview) return null;
 
   return (
     <div
-      className={`flex items-center justify-center rounded-[var(--radius-card)] border border-dashed border-line bg-muted ${className ?? ""}`}
+      className={`flex flex-col items-center justify-center gap-1 rounded-[var(--radius-card)] border border-dashed border-brand/30 bg-brand/[0.04] ${className ?? ""}`}
       style={{ minHeight: height }}
       role="complementary"
-      aria-label="Iklan"
+      aria-label="Area iklan"
     >
-      <span className="text-[11px] uppercase tracking-wide text-charcoal/40">
-        Iklan · {placement}
+      <span className="rounded bg-brand/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand">
+        Area Iklan
+      </span>
+      <span className="text-[11px] text-charcoal/50">
+        {label ?? placement}
+        {size ? ` · ${size}` : ""}
       </span>
     </div>
   );
