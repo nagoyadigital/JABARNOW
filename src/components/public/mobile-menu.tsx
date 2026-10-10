@@ -4,13 +4,16 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { mainCategories } from "@/lib/navigation";
 
+type Region = { slug: string; name: string; type: string };
+
 /**
  * MobileMenu — hamburger + drawer kategori/wilayah/informasi (mobile).
  * Kategori dipindah ke drawer di mobile (03-HOMEPAGE-MOBILE.md), tidak di
- * navbar charcoal. Mengelola fokus & bisa ditutup dengan Escape.
+ * navbar charcoal. Wilayah sebagai sub-daftar yang bisa dibuka.
  */
-export function MobileMenu() {
+export function MobileMenu({ regions = [] }: { regions?: Region[] }) {
   const [open, setOpen] = useState(false);
+  const [regionOpen, setRegionOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -80,12 +83,61 @@ export function MobileMenu() {
                   </li>
                 ))}
               </ul>
+              {/* Wilayah: sub-daftar yang bisa dibuka */}
               <p className="mb-2 mt-5 text-xs font-semibold uppercase tracking-wide text-charcoal/40">
-                Lainnya
+                Wilayah
+              </p>
+              {regions.length > 0 ? (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setRegionOpen((v) => !v)}
+                    aria-expanded={regionOpen}
+                    className="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium hover:bg-muted"
+                  >
+                    Pilih Wilayah
+                    <span aria-hidden="true" className={regionOpen ? "rotate-180" : ""}>
+                      ▾
+                    </span>
+                  </button>
+                  {regionOpen && (
+                    <ul className="mb-1 max-h-60 space-y-0.5 overflow-y-auto pl-2">
+                      {regions.map((r) => (
+                        <li key={r.slug}>
+                          <Link
+                            href={`/wilayah/${r.slug}`}
+                            onClick={() => setOpen(false)}
+                            className="block rounded-md px-3 py-1.5 text-sm text-charcoal/80 hover:bg-muted hover:text-brand"
+                          >
+                            {r.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <Link
+                    href="/wilayah"
+                    onClick={() => setOpen(false)}
+                    className="block rounded-md px-3 py-2 text-sm font-medium text-brand hover:bg-muted"
+                  >
+                    Semua Wilayah →
+                  </Link>
+                </div>
+              ) : (
+                <Link
+                  href="/wilayah"
+                  onClick={() => setOpen(false)}
+                  className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-muted hover:text-brand"
+                >
+                  Wilayah
+                </Link>
+              )}
+
+              <p className="mb-2 mt-5 text-xs font-semibold uppercase tracking-wide text-charcoal/40">
+                Informasi
               </p>
               <ul className="space-y-1">
                 {[
-                  { label: "Wilayah", href: "/wilayah" },
                   { label: "Tentang", href: "/tentang" },
                   { label: "Redaksi", href: "/redaksi" },
                   { label: "Kontak", href: "/kontak" },

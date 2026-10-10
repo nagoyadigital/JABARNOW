@@ -3,6 +3,8 @@ import { BrandLogo } from "@/components/brand/brand-logo";
 import { WibDate } from "@/components/common/wib-date";
 import { MobileMenu } from "@/components/public/mobile-menu";
 import { SearchOverlay } from "@/components/public/search-overlay";
+import { RegionMenu } from "@/components/public/region-menu";
+import { getRegionNav } from "@/lib/cms-data";
 import { mainCategories } from "@/lib/navigation";
 
 /**
@@ -10,14 +12,17 @@ import { mainCategories } from "@/lib/navigation";
  * Desktop (02-HOMEPAGE-DESKTOP.md): topbar → header putih → navbar charcoal.
  * Mobile (03-HOMEPAGE-MOBILE.md): header putih (hamburger kiri, logo tengah,
  * search kanan); kategori pindah ke drawer, bukan navbar charcoal.
+ * Menu "Wilayah" di navbar punya dropdown daftar kab/kota.
  */
-export function SiteHeader() {
+export async function SiteHeader() {
+  const regions = await getRegionNav();
+
   return (
     <header>
       {/* ===== Mobile header (hamburger · logo · search) ===== */}
       <div className="border-b border-line bg-base md:hidden">
         <div className="container-jn flex h-[var(--h-header-mobile)] items-center justify-between">
-          <MobileMenu />
+          <MobileMenu regions={regions} />
           <BrandLogo height={32} priority />
           <SearchOverlay variant="light" />
         </div>
@@ -80,12 +85,7 @@ export function SiteHeader() {
                   </li>
                 ))}
                 <li>
-                  <Link
-                    href="/wilayah"
-                    className="text-white/90 transition-colors hover:text-brand"
-                  >
-                    Wilayah
-                  </Link>
+                  <RegionMenu regions={regions} />
                 </li>
               </ul>
             </nav>
