@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Article } from "@/lib/types";
 import { MostReadRankRow } from "@/components/public/news-cards";
 import { SectionHeading } from "@/components/public/section-heading";
+import { FlameIcon } from "@/components/common/icons";
 
 /**
  * MostRead — HANYA dua tab: 24 Jam dan 7 Hari (00-MASTER-DESIGN-RULES.md).
@@ -27,7 +28,10 @@ export function MostRead({
   return (
     <section aria-labelledby="most-read-heading">
       <div id="most-read-heading">
-        <SectionHeading title="Most Read" />
+        <SectionHeading
+          title="Most Read"
+          icon={<FlameIcon className="h-5 w-5 text-brand" />}
+        />
       </div>
       <div className="rounded-[var(--radius-card)] border border-line bg-base p-4">
         <div className="mb-2 flex gap-2" role="tablist" aria-label="Rentang Most Read">

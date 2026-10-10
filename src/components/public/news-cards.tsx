@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Article } from "@/lib/types";
 import { CoverImage } from "@/components/public/cover-image";
 import { RelativeTime } from "@/components/common/relative-time";
+import { FlameIcon } from "@/components/common/icons";
 
 function CategoryTag({ name }: { name: string }) {
   return (
@@ -85,17 +86,30 @@ export function MostReadRankRow({
   article: Article;
   rank: number;
 }) {
+  const isTop = rank === 1;
   return (
     <article className="group border-b border-line last:border-0">
-      <Link href={`/artikel/${article.slug}`} className="flex gap-3 py-3">
-        <span className="w-7 shrink-0 text-2xl font-extrabold leading-none text-brand">
-          {rank}
-        </span>
+      <Link href={`/artikel/${article.slug}`} className="flex items-start gap-3 py-3">
+        {/* Peringkat: #1 badge api, lainnya angka orange tebal */}
+        {isTop ? (
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand text-white shadow-sm">
+            <FlameIcon className="h-5 w-5" />
+          </span>
+        ) : (
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center text-2xl font-extrabold leading-none text-brand/70">
+            {rank}
+          </span>
+        )}
         <div className="min-w-0">
           <h3 className="line-clamp-2 text-sm font-semibold leading-snug group-hover:text-brand">
             {article.title}
           </h3>
-          <p className="mt-1 text-xs text-charcoal/50">
+          <p className="mt-1 flex items-center gap-1.5 text-xs text-charcoal/50">
+            {isTop && (
+              <span className="inline-flex items-center gap-0.5 rounded bg-brand/10 px-1.5 py-0.5 font-semibold text-brand">
+                <FlameIcon className="h-3 w-3" /> Terpanas
+              </span>
+            )}
             <RelativeTime iso={article.publishedAt} />
           </p>
         </div>
