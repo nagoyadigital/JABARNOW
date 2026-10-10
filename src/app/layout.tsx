@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import { siteConfig } from "@/lib/site-config";
+import { GA4 } from "@/components/common/ga4";
 import "./globals.css";
 
 // Judul: Plus Jakarta Sans (700-800). Body/UI: Inter (400-600).
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col bg-base text-charcoal">
         {children}
+        <GA4 />
       </body>
     </html>
   );
