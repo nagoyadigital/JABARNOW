@@ -2,16 +2,21 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { getPublishedArticleBySlug } from "@/lib/articles";
+import { getPublishedArticleBySlug, getRelatedArticles } from "@/lib/articles";
 import { renderArticleHtml } from "@/lib/render-content";
 import { siteConfig } from "@/lib/site-config";
-import { formatWibDateTime } from "@/lib/format";
+import { formatWibDateTime, readingTimeMinutes } from "@/lib/format";
 import { ArticleReactions } from "@/components/public/article-reactions";
 import { AdSlot } from "@/components/public/ad-slot";
 import { CoverImage } from "@/components/public/cover-image";
 import { ShareBar } from "@/components/public/share-bar";
 import { AuthorCard } from "@/components/public/author-card";
+import { Breadcrumb } from "@/components/public/breadcrumb";
+import { Comments } from "@/components/public/comments";
+import { ArticleArchiveList } from "@/components/public/article-list";
+import { SectionHeading } from "@/components/public/section-heading";
 import { MostRead } from "@/components/public/most-read";
+import { getApprovedComments } from "@/app/(public)/artikel/comment-actions";
 import { sampleArticleDetail, mostRead24h, mostRead7d } from "@/lib/sample-content";
 
 export const instant = false;
@@ -125,6 +130,12 @@ export default async function ArticleDetailPage({
   const html = renderArticleHtml(article.contentJson);
   const url = `${siteConfig.url}/artikel/${article.slug}`;
   const publishedIso = article.publishedAt?.toISOString();
+  const [related, comments] = await Promise.all([
+    getRelatedArticles(article.slug, article.category?.slug),
+    getApprovedComments(article.id),
+  ]);
+  // Perkiraan waktu baca dari teks konten (strip tag)
+  const readMin = readingTimeMinutes(html.replace(/<[^>]+>/g, " "));
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -141,6 +152,15 @@ export default async function ArticleDetailPage({
 
   return (
     <ArticleShell jsonLd={jsonLd}>
+      <Breadcrumb
+        items={[
+          { label: "Beranda", href: "/" },
+          ...(article.category
+            ? [{ label: article.category.name, href: `/kategori/${article.category.slug}` }]
+            : []),
+          { label: article.title },
+        ]}
+      />
       {article.category && (
         <Link
           href={`/kategori/${article.category.slug}`}
@@ -153,11 +173,12 @@ export default async function ArticleDetailPage({
         {article.title}
       </h1>
 
-      {/* Byline: penulis · tanggal+jam WIB · wilayah */}
+      {/* Byline: penulis · tanggal+jam WIB · waktu baca · wilayah */}
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-y border-line py-3">
         <p className="text-sm text-charcoal/60">
           <span className="font-medium text-charcoal">{article.author.name}</span>
           {publishedIso ? ` · ${formatWibDateTime(publishedIso)}` : ""}
+          {` · ${readMin} menit baca`}
           {article.region ? ` · ${article.region.name}` : ""}
         </p>
         <ShareBar title={article.title} />
@@ -196,6 +217,21 @@ export default async function ArticleDetailPage({
       <div className="mt-6 border-t border-line pt-6">
         <ArticleReactions articleId={article.id} />
       </div>
+
+      {related.length > 0 && (
+        <div className="mt-10">
+          <SectionHeading title="Artikel Terkait" />
+          <ArticleArchiveList items={related} />
+        </div>
+      )}
+
+      <Comments
+        articleId={article.id}
+        initialComments={comments.map((c) => ({
+          ...c,
+          createdAt: c.createdAt.toISOString(),
+        }))}
+      />
     </ArticleShell>
   );
 }
@@ -207,8 +243,16 @@ function SampleArticle() {
   const first = a.paragraphs.slice(0, half);
   const rest = a.paragraphs.slice(half);
 
+  const readMin = readingTimeMinutes(a.paragraphs.join(" "));
   return (
     <ArticleShell>
+      <Breadcrumb
+        items={[
+          { label: "Beranda", href: "/" },
+          { label: a.category.name, href: `/kategori/${a.category.slug}` },
+          { label: a.title },
+        ]}
+      />
       <Link
         href={`/kategori/${a.category.slug}`}
         className="text-sm font-semibold uppercase tracking-wide text-brand hover:underline"
@@ -223,7 +267,7 @@ function SampleArticle() {
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-y border-line py-3">
         <p className="text-sm text-charcoal/60">
           <span className="font-medium text-charcoal">{a.authorName}</span>
-          {` · ${formatWibDateTime(a.publishedAt)} · ${a.region.name}`}
+          {` · ${formatWibDateTime(a.publishedAt)} · ${readMin} menit baca · ${a.region.name}`}
         </p>
         <ShareBar title={a.title} />
       </div>
@@ -269,6 +313,9 @@ function SampleArticle() {
       <div className="mt-6 border-t border-line pt-6">
         <ArticleReactions articleId={a.slug} />
       </div>
+
+      {/* Komentar (preview: kosong, kirim butuh login + DB) */}
+      <Comments articleId={a.slug} initialComments={[]} />
 
       <p className="mt-6 rounded-md bg-muted p-3 text-xs text-charcoal/50">
         Ini pratinjau artikel contoh (data belum dari database). Konten &amp;

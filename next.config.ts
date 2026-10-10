@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Build mandiri untuk self-host di VPS (folder .next/standalone ringan).
+  output: "standalone",
   cacheComponents: true,
   partialPrefetching: true,
   images: {

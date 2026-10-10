@@ -1,0 +1,9 @@
+# Crontab JabarNow! — publish artikel terjadwal.
+# Pasang: `crontab -e` lalu tempel baris di bawah (ganti CRON_SECRET & domain).
+# Jalan tiap menit; endpoint hanya mem-publish artikel yang scheduledAt <= now.
+
+* * * * * curl -s -X POST -H "Authorization: Bearer GANTI_DENGAN_CRON_SECRET" https://jabarnow.id/api/cron/publish-scheduled > /dev/null 2>&1
+
+# Catatan:
+# - Nilai Bearer harus SAMA dengan CRON_SECRET di file .env aplikasi.
+# - Jika tidak mau tiap menit, pakai mis. "*/5 * * * *" untuk tiap 5 menit.

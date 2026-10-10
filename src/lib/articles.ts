@@ -88,6 +88,26 @@ export async function searchPublished(q: string): Promise<ArticleCard[]> {
   }
 }
 
+export async function getRelatedArticles(
+  currentSlug: string,
+  categorySlug: string | undefined,
+): Promise<ArticleCard[]> {
+  try {
+    return (await prisma.article.findMany({
+      where: {
+        status: "PUBLISHED",
+        slug: { not: currentSlug },
+        ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+      },
+      select: cardSelect,
+      orderBy: { publishedAt: "desc" },
+      take: 3,
+    })) as ArticleCard[];
+  } catch {
+    return [];
+  }
+}
+
 export async function getPublishedSlugs(): Promise<
   { slug: string; updatedAt: Date; publishedAt: Date | null }[]
 > {

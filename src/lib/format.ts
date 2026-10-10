@@ -24,6 +24,12 @@ export function formatWibDateTime(iso: string): string {
   return `${s} WIB`;
 }
 
+/** Estimasi waktu baca (menit) dari jumlah kata; min 1 menit (~200 wpm). */
+export function readingTimeMinutes(text: string): number {
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 200));
+}
+
 /** Waktu relatif singkat: "5 mnt lalu", "3 jam lalu", "2 hari lalu". */
 export function timeAgoWib(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
