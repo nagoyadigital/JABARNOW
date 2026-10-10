@@ -11,6 +11,19 @@ export function formatWibDate(iso: string): string {
   }).format(new Date(iso));
 }
 
+/** Tanggal + jam lengkap WIB: "10 Oktober 2026, 14.30 WIB". */
+export function formatWibDateTime(iso: string): string {
+  const s = new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Jakarta",
+  }).format(new Date(iso));
+  return `${s} WIB`;
+}
+
 /** Waktu relatif singkat: "5 mnt lalu", "3 jam lalu", "2 hari lalu". */
 export function timeAgoWib(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
