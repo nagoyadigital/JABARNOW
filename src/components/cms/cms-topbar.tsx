@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Role } from "@prisma/client";
 import { ROLE_LABELS } from "@/lib/permissions";
 import { logoutAction } from "@/app/cms/actions";
+import { CmsMobileNav } from "@/components/cms/cms-mobile-nav";
 
 /**
  * CmsTopbar — topbar terang: global search, lihat website, identitas + logout.
@@ -18,6 +19,7 @@ export function CmsTopbar({ name, role }: { name: string; role: Role }) {
   return (
     <header className="flex h-16 items-center justify-between border-b border-line bg-base px-4 md:px-6">
       <div className="flex flex-1 items-center gap-3">
+        <CmsMobileNav role={role} />
         <input
           type="search"
           placeholder="Cari artikel, penulis, kategori..."
