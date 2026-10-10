@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { WibDate } from "@/components/common/wib-date";
 import { MobileMenu } from "@/components/public/mobile-menu";
-import { SearchIcon } from "@/components/common/icons";
+import { SearchOverlay } from "@/components/public/search-overlay";
 import { mainCategories } from "@/lib/navigation";
 
 /**
@@ -19,13 +19,7 @@ export function SiteHeader() {
         <div className="container-jn flex h-[var(--h-header-mobile)] items-center justify-between">
           <MobileMenu />
           <BrandLogo height={32} priority />
-          <Link
-            href="/cari"
-            aria-label="Pencarian"
-            className="flex h-10 w-10 items-center justify-center rounded-md text-charcoal transition-colors hover:text-brand"
-          >
-            <SearchIcon className="h-5 w-5" />
-          </Link>
+          <SearchOverlay variant="light" />
         </div>
       </div>
 
@@ -95,13 +89,7 @@ export function SiteHeader() {
                 </li>
               </ul>
             </nav>
-            <Link
-              href="/cari"
-              aria-label="Pencarian"
-              className="flex h-8 w-8 items-center justify-center rounded-md text-white/90 transition-colors hover:bg-white/10 hover:text-brand"
-            >
-              <SearchIcon className="h-5 w-5" />
-            </Link>
+            <SearchOverlay variant="dark" />
           </div>
         </div>
       </div>
