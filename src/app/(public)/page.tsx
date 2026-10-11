@@ -12,8 +12,10 @@ import { JabarHariIni, KategoriPilihan } from "@/components/public/home-sections
 import {
   listLatestPublished,
   listMostRead,
+  listPopularTags,
   cardToArticle,
 } from "@/lib/articles";
+import { PopularTags } from "@/components/public/tag-chips";
 import type { Article } from "@/lib/types";
 import {
   heroMain as sHeroMain,
@@ -36,10 +38,11 @@ export const instant = false;
  */
 export default async function HomePage() {
   await connection(); // render di request time (DB + Date.now di Most Read)
-  const [latestDb, read24, read7] = await Promise.all([
+  const [latestDb, read24, read7, popularTags] = await Promise.all([
     listLatestPublished(12),
     listMostRead(24, 5),
     listMostRead(24 * 7, 5),
+    listPopularTags(12),
   ]);
 
   const hasData = latestDb.length > 0;
@@ -164,6 +167,19 @@ export default async function HomePage() {
           <aside className="lg:col-span-4">
             <div className="lg:sticky lg:top-4 space-y-6">
               <MostRead data24h={mostRead24h} data7d={mostRead7d} />
+
+              {/* Tag Populer */}
+              {popularTags.length > 0 && (
+                <section aria-labelledby="tag-populer">
+                  <div id="tag-populer">
+                    <SectionHeading title="Tag Populer" />
+                  </div>
+                  <div className="rounded-[var(--radius-card)] border border-line bg-base p-4">
+                    <PopularTags tags={popularTags} />
+                  </div>
+                </section>
+              )}
+
               <AdSlot
                 placement="sidebar"
                 label="Sidebar (Medium Rectangle)"

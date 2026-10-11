@@ -12,6 +12,7 @@ import { CoverImage } from "@/components/public/cover-image";
 import { ShareBar } from "@/components/public/share-bar";
 import { AuthorCard } from "@/components/public/author-card";
 import { Breadcrumb } from "@/components/public/breadcrumb";
+import { TagChips } from "@/components/public/tag-chips";
 import { Comments } from "@/components/public/comments";
 import { ArticleArchiveList } from "@/components/public/article-list";
 import { SectionHeading } from "@/components/public/section-heading";
@@ -207,6 +208,15 @@ export default async function ArticleDetailPage({
         className="prose-article space-y-4 text-[length:var(--text-article-mobile)] leading-relaxed md:text-[length:var(--text-article-desktop)]"
         dangerouslySetInnerHTML={{ __html: html }}
       />
+
+      {/* Tag artikel */}
+      {article.tags.length > 0 && (
+        <div className="mt-6">
+          <TagChips
+            tags={article.tags.map((t) => ({ slug: t.tag.slug, name: t.tag.name }))}
+          />
+        </div>
+      )}
 
       {/* Reaksi emote (selalu aktif, wajib login) */}
       <div className="mt-8 border-t border-line pt-6">

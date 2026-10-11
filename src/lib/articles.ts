@@ -18,6 +18,7 @@ export function cardToArticle(c: ArticleCard): Article {
       : { slug: "umum", name: "Umum" },
     region: c.region ? { slug: c.region.slug, name: c.region.name } : undefined,
     author: { slug: "author", name: c.author.name },
+    tags: c.tags?.map((t) => ({ slug: t.tag.slug, name: t.tag.name })) ?? [],
     publishedAt: (c.publishedAt ?? new Date()).toISOString(),
   };
 }
@@ -31,6 +32,7 @@ export async function getPublishedArticleBySlug(slug: string) {
         category: { select: { name: true, slug: true } },
         region: { select: { name: true, slug: true } },
         cover: { select: { url: true, alt: true } },
+        tags: { select: { tag: { select: { name: true, slug: true } } } },
       },
     });
   } catch {
@@ -47,6 +49,7 @@ export type ArticleCard = {
   region: { name: string; slug: string } | null;
   author: { name: string };
   cover: { url: string; alt: string | null } | null;
+  tags: { tag: { name: string; slug: string } }[];
 };
 
 const cardSelect = {
@@ -58,6 +61,7 @@ const cardSelect = {
   region: { select: { name: true, slug: true } },
   author: { select: { name: true } },
   cover: { select: { url: true, alt: true } },
+  tags: { select: { tag: { select: { name: true, slug: true } } }, take: 3 },
 } as const;
 
 /** Ambil N artikel published terbaru (untuk homepage). */
@@ -83,6 +87,41 @@ export async function listMostRead(sinceHours: number, take = 5): Promise<Articl
       select: cardSelect,
       orderBy: [{ viewCount: "desc" }, { publishedAt: "desc" }],
       take,
+    })) as ArticleCard[];
+  } catch {
+    return [];
+  }
+}
+
+/** Tag populer: diurutkan dari yang paling banyak dipakai artikel. */
+export async function listPopularTags(
+  take = 12,
+): Promise<{ slug: string; name: string; count: number }[]> {
+  try {
+    const tags = await prisma.tag.findMany({
+      select: {
+        slug: true,
+        name: true,
+        _count: { select: { articles: true } },
+      },
+      orderBy: { articles: { _count: "desc" } },
+      take,
+    });
+    return tags
+      .filter((t) => t._count.articles > 0)
+      .map((t) => ({ slug: t.slug, name: t.name, count: t._count.articles }));
+  } catch {
+    return [];
+  }
+}
+
+export async function listPublishedByTag(slug: string): Promise<ArticleCard[]> {
+  try {
+    return (await prisma.article.findMany({
+      where: { status: "PUBLISHED", tags: { some: { tag: { slug } } } },
+      select: cardSelect,
+      orderBy: { publishedAt: "desc" },
+      take: 40,
     })) as ArticleCard[];
   } catch {
     return [];

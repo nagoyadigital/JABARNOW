@@ -29,7 +29,7 @@ export function MostRead({
     <section aria-labelledby="most-read-heading">
       <div id="most-read-heading">
         <SectionHeading
-          title="Most Read"
+          title="Trending"
           icon={<FlameIcon className="h-5 w-5 text-brand" />}
         />
       </div>

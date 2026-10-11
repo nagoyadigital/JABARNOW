@@ -42,19 +42,20 @@ type Spec = {
   category: string; // slug kategori
   region?: string; // slug wilayah
   hoursAgo: number;
+  tags: string[]; // nama tag
 };
 
 const ARTICLES: Spec[] = [
-  { title: "Pemprov Jabar Percepat Pembangunan Infrastruktur Jalan Daerah", category: "berita", region: "kota-bandung", hoursAgo: 1 },
-  { title: "Ekonomi Kreatif Bandung Tumbuh Pesat Sepanjang Kuartal Ini", category: "ekonomi", region: "kota-bandung", hoursAgo: 3 },
-  { title: "Persib Siapkan Strategi Baru Jelang Laga Kandang", category: "olahraga", region: "kabupaten-bandung", hoursAgo: 5 },
-  { title: "Startup Teknologi Asal Bekasi Raih Pendanaan Tahap Awal", category: "teknologi", region: "kota-bekasi", hoursAgo: 7 },
-  { title: "Pemkot Bogor Luncurkan Program Wisata Ramah Keluarga", category: "gaya-hidup", region: "kota-bogor", hoursAgo: 10 },
-  { title: "Dinas Pendidikan Jabar Dorong Digitalisasi Sekolah", category: "pendidikan", region: "kota-depok", hoursAgo: 14 },
-  { title: "Harga Komoditas Pangan di Pasar Tradisional Mulai Stabil", category: "ekonomi", region: "kabupaten-bogor", hoursAgo: 20 },
-  { title: "Festival Budaya Sunda Digelar Akhir Pekan Ini", category: "gaya-hidup", region: "kota-bandung", hoursAgo: 28 },
-  { title: "Pemkab Garut Tingkatkan Layanan Kesehatan Masyarakat", category: "kesehatan", region: "kabupaten-garut", hoursAgo: 36 },
-  { title: "Pembangunan Transportasi Publik Terintegrasi Dikebut", category: "berita", region: "kota-bandung", hoursAgo: 50 },
+  { title: "Pemprov Jabar Percepat Pembangunan Infrastruktur Jalan Daerah", category: "berita", region: "kota-bandung", hoursAgo: 1, tags: ["Infrastruktur", "Pemprov Jabar", "Pembangunan"] },
+  { title: "Ekonomi Kreatif Bandung Tumbuh Pesat Sepanjang Kuartal Ini", category: "ekonomi", region: "kota-bandung", hoursAgo: 3, tags: ["Ekonomi Kreatif", "UMKM", "Bandung"] },
+  { title: "Persib Siapkan Strategi Baru Jelang Laga Kandang", category: "olahraga", region: "kabupaten-bandung", hoursAgo: 5, tags: ["Persib", "Liga 1", "Sepak Bola"] },
+  { title: "Startup Teknologi Asal Bekasi Raih Pendanaan Tahap Awal", category: "teknologi", region: "kota-bekasi", hoursAgo: 7, tags: ["Startup", "Pendanaan", "Teknologi"] },
+  { title: "Pemkot Bogor Luncurkan Program Wisata Ramah Keluarga", category: "gaya-hidup", region: "kota-bogor", hoursAgo: 10, tags: ["Wisata", "Bogor", "Keluarga"] },
+  { title: "Dinas Pendidikan Jabar Dorong Digitalisasi Sekolah", category: "pendidikan", region: "kota-depok", hoursAgo: 14, tags: ["Pendidikan", "Digitalisasi", "Sekolah"] },
+  { title: "Harga Komoditas Pangan di Pasar Tradisional Mulai Stabil", category: "ekonomi", region: "kabupaten-bogor", hoursAgo: 20, tags: ["Pangan", "Harga", "Pasar"] },
+  { title: "Festival Budaya Sunda Digelar Akhir Pekan Ini", category: "gaya-hidup", region: "kota-bandung", hoursAgo: 28, tags: ["Budaya Sunda", "Festival", "Bandung"] },
+  { title: "Pemkab Garut Tingkatkan Layanan Kesehatan Masyarakat", category: "kesehatan", region: "kabupaten-garut", hoursAgo: 36, tags: ["Kesehatan", "Garut", "Layanan Publik"] },
+  { title: "Pembangunan Transportasi Publik Terintegrasi Dikebut", category: "berita", region: "kota-bandung", hoursAgo: 50, tags: ["Transportasi", "Infrastruktur", "Pembangunan"] },
 ];
 
 async function main() {
@@ -95,7 +96,7 @@ async function main() {
       },
     });
 
-    await prisma.article.upsert({
+    const article = await prisma.article.upsert({
       where: { slug },
       update: {
         status: "PUBLISHED",
@@ -122,7 +123,23 @@ async function main() {
         seoDescription:
           "Berita contoh JabarNow! untuk pratinjau tampilan homepage dan detail artikel.",
       },
+      select: { id: true },
     });
+
+    // Tag: upsert tag + hubungkan ke artikel
+    for (const tagName of spec.tags) {
+      const tagSlug = slugify(tagName);
+      const tag = await prisma.tag.upsert({
+        where: { slug: tagSlug },
+        update: {},
+        create: { slug: tagSlug, name: tagName },
+      });
+      await prisma.articleTag.upsert({
+        where: { articleId_tagId: { articleId: article.id, tagId: tag.id } },
+        update: {},
+        create: { articleId: article.id, tagId: tag.id },
+      });
+    }
     console.log(`✔ ${spec.title}`);
   }
 

@@ -18,6 +18,11 @@ export type Author = {
   name: string;
 };
 
+export type Tag = {
+  slug: string;
+  name: string;
+};
+
 export type Article = {
   slug: string;
   title: string;
@@ -30,6 +35,7 @@ export type Article = {
   category: Category;
   region?: Region;
   author: Author;
+  tags?: Tag[];
   // ISO string; waktu editorial WIB
   publishedAt: string;
   // Jumlah views; opsional, hanya jika benar-benar tersedia
