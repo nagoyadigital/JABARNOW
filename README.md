@@ -74,6 +74,7 @@ src/
     site-config.ts   # konfigurasi situs + atribusi Nagoya Digital
     navigation.ts    # nav publik + footer 4 kelompok (terkunci)
     cms-navigation.ts# navigation map CMS + permission (acuan)
+    ai/              # AI Desk: scout, parser feed, normalisasi, log agent
 docs/jabarnow/       # 17 dokumen spesifikasi (source of truth)
 public/brand/logo.png# logo resmi (placeholder sebelum upload CMS)
 ```
@@ -101,6 +102,10 @@ GA4/GSC opsional). File `.env` tidak di-commit.
   (manual placement + jadwal), Analytics (GA4 integration-ready). ✓
 - **Tahap 6** Halaman publik sisa (kategori/wilayah/author/search/legal),
   Users & Roles, Settings, Komentar, Audit Log, mobile CMS. ✓
+- **Tahap 7** AI Desk — Sumber Berita + Scout: kelola feed RSS/Atom/Google
+  Trends, Scout terjadwal (cron) + tombol manual, dedup URL & judul lintas
+  portal, Radar Topik, Ruang Redaksi AI, log agent. Artikel AI hanya bisa
+  diputuskan Pemimpin Redaksi / Super Admin. ✓
 - Build & lint: **lulus** di setiap tahap.
 
 ### Dependency utama
@@ -110,6 +115,7 @@ GA4/GSC opsional). File `.env` tidak di-commit.
 - Tiptap (block editor) + isomorphic-dompurify (sanitasi)
 - @aws-sdk/client-s3 (Cloudflare R2, S3-compatible)
 - zod (validasi)
+- fast-xml-parser (parser feed RSS/Atom untuk AI Desk)
 
 ### Mengaktifkan database & storage (yang perlu Anda lakukan)
 1. **Supabase**: buat project → salin `DATABASE_URL` (pooled) & `DIRECT_URL`
@@ -125,6 +131,76 @@ GA4/GSC opsional). File `.env` tidak di-commit.
 - `NEXT_PUBLIC_GA4_MEASUREMENT_ID` → aktifkan Google Analytics 4.
 - `GSC_VERIFICATION` → verifikasi Google Search Console. Submit
   `https://jabarnow.id/sitemap.xml` & `/news-sitemap.xml` di GSC.
+
+## AI Desk — Redaksi Otomatis (Tahap 7+)
+
+AI Desk menjalankan "redaksi AI" di dalam CMS: agent mencari topik, menilai,
+menulis, dan mendesain; **Pemimpin Redaksi yang memutuskan**. Artikel AI
+masuk ke alur review yang sudah ada (`/cms/review`) dan tidak pernah tayang
+tanpa approval.
+
+```
+Sumber Berita ─▶ Scout ─▶ Analis ─▶ Copywriter ─▶ Designer ─▶ Review Pimred ─▶ Jadwal/Tayang ─▶ Sosmed
+  (Tahap 7)     (Tahap 7)  (Tahap 8)   (Tahap 9)    (Tahap 10)   (sudah ada)     (sudah ada)    (Tahap 11)
+```
+
+### Yang sudah aktif (Tahap 7)
+| Bagian | Lokasi | Keterangan |
+| --- | --- | --- |
+| Ruang Redaksi AI | `/cms/ai-desk` | Statistik 24 jam, status agent, log aktivitas, tombol "Cari topik sekarang" |
+| Radar Topik | `/cms/ai-desk/radar` | Semua topik hasil Scout, filter status, cari judul, abaikan/kembalikan |
+| Sumber Berita | `/cms/ai-desk/sumber` | Tambah feed (RSS/Atom/Trends), "Cek feed", aktif/nonaktif, cek per sumber, statistik 7 hari, pesan error |
+| Scout (cron) | `POST /api/cron/ai-scout` | Ambil semua sumber aktif, buang item > 48 jam, dedup, simpan `Topic`, ambil `og:image` |
+
+**Cara kerja Scout**
+- Format feed dideteksi otomatis: RSS 2.0, Atom, RSS 1.0 (RDF), Google Trends RSS
+  (tiap berita terkait sebuah tren menjadi satu topik).
+- Dedup dua lapis: URL kanonik (parameter `utm_*`, `fbclid`, dll. dibuang) dan
+  judul ternormalisasi, sehingga berita sama dari dua portal hanya masuk sekali.
+- Batas aman: timeout 15 detik & maks 3 MB per feed, 4 sumber paralel, hanya
+  URL http/https publik (host lokal/privat ditolak).
+- Putaran tidak tumpang tindih: bila Scout masih berjalan, cron berikutnya
+  dilewati; putaran macet > 15 menit ditandai error otomatis.
+- Setiap putaran tercatat di tabel `AgentRun` (dasar status agent & biaya AI).
+
+### Hak akses
+| Izin | Role | Untuk |
+| --- | --- | --- |
+| `ai.manage` | Super Admin, Administrator, Pemimpin Redaksi | Kelola sumber, Radar, menjalankan Scout |
+| `ai.approve` | **Super Admin, Pemimpin Redaksi** | Approve / revisi / tolak / publish artikel tulisan AI |
+
+Artikel AI dikenali dari relasi `Topic` → `Article`. Editor tetap bisa membaca
+dan mengedit, tapi tombol keputusan diganti catatan "menunggu keputusan
+Pemimpin Redaksi", dan server menolak keputusan tanpa `ai.approve`.
+
+### Mengaktifkan
+1. Deploy seperti biasa (`bash scripts/deploy.sh`) — migrasi
+   `20261023090000_ai_desk_scout` ikut dijalankan oleh `prisma migrate deploy`.
+   Migrasi ini hanya **menambah** tabel (`NewsSource`, `Topic`, `AgentRun`),
+   tidak mengubah data lama.
+2. Tambahkan baris cron AI Desk dari `deploy/crontab.example` (tiap 15 menit).
+3. Masuk sebagai Super Admin → **AI Desk → Sumber Berita** → tambah feed,
+   klik **Cek feed** dulu untuk memastikan feed terbaca.
+4. Klik **Cari topik sekarang**, lalu lihat hasilnya di **Radar Topik**.
+
+Contoh sumber untuk dicoba (URL feed portal bisa berubah — selalu pakai
+tombol **Cek feed** sebelum menyimpan):
+- Google Trends Indonesia (tipe Trends): `https://trends.google.com/trending/rss?geo=ID`
+- Feed RSS kanal Jawa Barat dari portal nasional/lokal (Antara Jabar, Detik
+  Jabar, Pikiran Rakyat, Tribun Jabar, dll.) — cari tautan "RSS" di situsnya.
+- Situs resmi Pemprov/Pemkot/Pemkab yang menyediakan RSS rilis berita.
+
+Pengaturan lanjutan lewat env (opsional): `AI_SCOUT_MAX_AGE_HOURS`,
+`AI_SCOUT_TITLE_DEDUP_HOURS`, `AI_SCOUT_MAX_ITEMS_PER_SOURCE`,
+`AI_SCOUT_OG_IMAGE_LIMIT`, `AI_SCOUT_FETCH_TIMEOUT_MS` (lihat `.env.example`).
+
+### Berikutnya
+- **Tahap 8 — Analis + Brain:** skor 0–100, kategori/wilayah otomatis, flag
+  topik sensitif, halaman Brain (gaya & aturan redaksi). Butuh API key AI.
+- **Tahap 9 — Copywriter:** artikel gaya media nasional (straight news &
+  explainer), cek fakta, cek kemiripan dengan sumber, masuk `/cms/review`.
+- **Tahap 10 — Featured image**, **Tahap 11 — Sosmed (Instagram)**,
+  **Tahap 12 — mode otomatis & jam kerja**.
 
 ### Push ke GitHub (butuh akun Anda)
 ```bash

@@ -1,8 +1,12 @@
-# Crontab JabarNow! — publish artikel terjadwal.
+# Crontab JabarNow! — publish artikel terjadwal + AI Desk.
 # Pasang: `crontab -e` lalu tempel baris di bawah (ganti CRON_SECRET & domain).
 # Jalan tiap menit; endpoint hanya mem-publish artikel yang scheduledAt <= now.
 
 * * * * * curl -s -X POST -H "Authorization: Bearer GANTI_DENGAN_CRON_SECRET" https://jabarnow.id/api/cron/publish-scheduled > /dev/null 2>&1
+
+# AI Desk — Scout mengambil topik baru dari semua sumber aktif tiap 15 menit.
+# Aman dipanggil berulang: putaran yang masih berjalan otomatis dilewati.
+*/15 * * * * curl -s -X POST -H "Authorization: Bearer GANTI_DENGAN_CRON_SECRET" https://jabarnow.id/api/cron/ai-scout > /dev/null 2>&1
 
 # Catatan:
 # - Nilai Bearer harus SAMA dengan CRON_SECRET di file .env aplikasi.

@@ -203,6 +203,8 @@ model Article {
   reviews    ReviewAction[]
   comments   Comment[]
   reactions  Reaction[]
+  // Diisi bila artikel ditulis oleh AI Desk (Tahap 7+). Null = artikel manual.
+  topic      Topic?
 
   @@index([status, publishedAt])
   @@index([categoryId])
@@ -396,4 +398,111 @@ model AuditLog {
 
   @@index([entity, entityId])
   @@index([createdAt])
+}
+
+// ============================================================
+// AI Desk (Tahap 7) — Sumber berita, topik hasil Scout, log agent
+// Artikel AI tetap masuk ke Article + workflow review yang sudah ada.
+// ============================================================
+
+enum NewsSourceKind {
+  RSS // RSS 2.0 / Atom (terdeteksi otomatis)
+  TRENDS // Google Trends RSS (judul tren + berita terkait)
+}
+
+model NewsSource {
+  id            String         @id @default(cuid())
+  name          String
+  url           String         @unique
+  // Kode bahasa: "id" atau "en"
+  language      String         @default("id")
+  kind          NewsSourceKind @default(RSS)
+  isActive      Boolean        @default(true)
+  lastCheckedAt DateTime?
+  lastError     String?
+  // Jumlah item baru pada pengecekan terakhir
+  lastNewCount  Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  topics Topic[]
+
+  @@index([isActive])
+}
+
+enum TopicStatus {
+  NEW // baru masuk dari Scout, belum dinilai
+  PASSED // lolos ambang skor Analis
+  FAILED // tidak lolos ambang skor
+  WRITING // sedang ditulis Copywriter
+  WRITTEN // sudah menjadi Article
+  SKIPPED // diabaikan manual oleh redaksi
+}
+
+model Topic {
+  id          String    @id @default(cuid())
+  sourceId    String
+  // URL kanonik (tanpa utm/fragment) — kunci dedup utama
+  url         String    @unique
+  // Judul ternormalisasi — dedup lintas portal untuk berita yang sama
+  titleKey    String
+  title       String
+  summary     String?
+  imageUrl    String?
+  author      String?
+  publishedAt DateTime?
+  language    String    @default("id")
+
+  // Diisi Analis (Tahap 8)
+  score        Int?
+  scoreReason  String?
+  sensitive    Boolean @default(false)
+  mode         String? // "straight" | "explainer"
+  categorySlug String?
+  regionSlug   String?
+
+  status    TopicStatus @default(NEW)
+  articleId String?     @unique
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  source  NewsSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  article Article?   @relation(fields: [articleId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([titleKey])
+  @@index([sourceId, createdAt])
+}
+
+enum AgentName {
+  SCOUT
+  ANALIS
+  COPYWRITER
+  DESIGNER
+  PUBLISHER
+}
+
+enum AgentRunStatus {
+  RUNNING
+  OK
+  ERROR
+}
+
+model AgentRun {
+  id         String         @id @default(cuid())
+  agent      AgentName
+  // "cron" | "manual:<userId>"
+  trigger    String         @default("cron")
+  status     AgentRunStatus @default(RUNNING)
+  startedAt  DateTime       @default(now())
+  finishedAt DateTime?
+  // Jumlah item yang diproses (mis. topik baru)
+  items      Int            @default(0)
+  tokensIn   Int            @default(0)
+  tokensOut  Int            @default(0)
+  costUsd    Decimal        @default(0) @db.Decimal(10, 5)
+  summary    String?
+  error      String?
+
+  @@index([agent, startedAt])
 }

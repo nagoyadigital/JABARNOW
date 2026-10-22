@@ -24,6 +24,11 @@ export const PERMISSIONS = [
   "users.manage",
   "settings.manage",
   "design.manage",
+  // AI Desk: kelola sumber berita, radar topik, jalankan agent
+  "ai.manage",
+  // Keputusan akhir artikel tulisan AI (approve/revisi/tolak/publish).
+  // Sengaja HANYA Super Admin & Pemimpin Redaksi.
+  "ai.approve",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -53,7 +58,9 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "comments.moderate",
     "users.manage",
     "settings.manage",
+    "ai.manage",
     // TIDAK termasuk design.manage (hanya Super Admin)
+    // TIDAK termasuk ai.approve (hanya Super Admin & Pemimpin Redaksi)
   ],
 
   PEMIMPIN_REDAKSI: [
@@ -69,6 +76,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "media.manage",
     "analytics.view",
     "comments.moderate",
+    "ai.manage",
+    "ai.approve",
   ],
 
   EDITOR: [

@@ -25,6 +25,7 @@ async function loadQueue() {
           author: { select: { name: true } },
           category: { select: { name: true } },
           region: { select: { name: true } },
+          topic: { select: { id: true } },
         },
         orderBy: { updatedAt: "asc" },
         take: 50,
@@ -46,6 +47,8 @@ export default async function ReviewPage() {
   const session = await requirePermission("article.review");
   const canPublish = hasPermission(session.user.role, "article.publish");
   const canSchedule = hasPermission(session.user.role, "article.schedule");
+  // Artikel tulisan AI hanya diputuskan Super Admin / Pemimpin Redaksi.
+  const canDecideAi = hasPermission(session.user.role, "ai.approve");
   const { ok, rows } = await loadQueue();
 
   return (
@@ -68,6 +71,11 @@ export default async function ReviewPage() {
                   <span className="rounded bg-brand/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-brand">
                     {STATUS_LABEL[a.status] ?? a.status}
                   </span>
+                  {a.topic && (
+                    <span className="ml-2 rounded bg-charcoal/10 px-2 py-0.5 text-[11px] font-semibold uppercase text-charcoal/70">
+                      Tulisan AI
+                    </span>
+                  )}
                   <h2 className="mt-1 text-lg font-bold">{a.title}</h2>
                   <p className="mt-0.5 text-xs text-charcoal/50">
                     {a.author.name}
@@ -79,11 +87,17 @@ export default async function ReviewPage() {
                   )}
                 </div>
               </div>
-              <ReviewActions
-                articleId={a.id}
-                canPublish={canPublish}
-                canSchedule={canSchedule}
-              />
+              {a.topic && !canDecideAi ? (
+                <p className="rounded-md bg-muted px-3 py-2 text-xs text-charcoal/60">
+                  Artikel AI menunggu keputusan Pemimpin Redaksi.
+                </p>
+              ) : (
+                <ReviewActions
+                  articleId={a.id}
+                  canPublish={canPublish}
+                  canSchedule={canSchedule}
+                />
+              )}
             </div>
           ))}
         </div>

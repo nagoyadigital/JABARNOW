@@ -60,7 +60,7 @@ sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d jabarnow.id -d www.jabarnow.id
 ```
 
-## 6. Cron publish terjadwal
+## 6. Cron publish terjadwal + AI Desk
 ```bash
 crontab -e
 # tempel isi deploy/crontab.example, ganti CRON_SECRET & domain
@@ -70,6 +70,10 @@ Verifikasi manual:
 curl -s -X POST -H "Authorization: Bearer $CRON_SECRET" \
   https://jabarnow.id/api/cron/publish-scheduled
 # -> {"ok":true,"published":N}
+
+curl -s -X POST -H "Authorization: Bearer $CRON_SECRET" \
+  https://jabarnow.id/api/cron/ai-scout
+# -> {"ok":true,"created":N,"failedSources":0,"sources":M}
 ```
 
 ## 7. PM2 auto-start saat server reboot

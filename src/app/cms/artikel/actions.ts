@@ -33,6 +33,25 @@ async function uniqueSlug(base: string, excludeId?: string): Promise<string> {
   }
 }
 
+/**
+ * Artikel tulisan AI Desk (punya relasi Topic) hanya boleh diputuskan oleh
+ * pemegang `ai.approve` (Super Admin & Pemimpin Redaksi). Editor biasa tetap
+ * bisa membaca & mengedit, tapi keputusan akhir ada di Pimred.
+ */
+async function assertCanDecide(
+  articleId: string,
+  role: Parameters<typeof hasPermission>[0],
+): Promise<string | null> {
+  const topic = await prisma.topic.findUnique({
+    where: { articleId },
+    select: { id: true },
+  });
+  if (topic && !hasPermission(role, "ai.approve")) {
+    return "Artikel AI hanya bisa diputuskan oleh Pemimpin Redaksi atau Super Admin.";
+  }
+  return null;
+}
+
 const saveSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, "Judul wajib diisi").max(200),
@@ -201,6 +220,9 @@ export async function reviewArticle(
         : "REJECTED";
 
   try {
+    const blocked = await assertCanDecide(id, session.user.role);
+    if (blocked) return { error: blocked };
+
     await prisma.$transaction([
       prisma.article.update({ where: { id }, data: { status: nextStatus } }),
       prisma.reviewAction.create({
@@ -242,6 +264,9 @@ export async function publishArticle(
   const { id, scheduledAt } = parsed.data;
 
   try {
+    const blocked = await assertCanDecide(id, session.user.role);
+    if (blocked) return { error: blocked };
+
     if (scheduledAt) {
       if (!hasPermission(session.user.role, "article.schedule")) {
         return { error: "Tidak diizinkan menjadwalkan." };

@@ -34,6 +34,14 @@ export const cmsNavGroups: CmsNavGroup[] = [
     ],
   },
   {
+    title: "AI Desk",
+    items: [
+      { label: "Ruang Redaksi AI", href: "/cms/ai-desk", permission: "ai.manage" },
+      { label: "Radar Topik", href: "/cms/ai-desk/radar", permission: "ai.manage" },
+      { label: "Sumber Berita", href: "/cms/ai-desk/sumber", permission: "ai.manage" },
+    ],
+  },
+  {
     title: "Monetisasi",
     items: [{ label: "Ads Manager", href: "/cms/ads", permission: "ads.manage" }],
   },
