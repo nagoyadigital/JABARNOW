@@ -27,10 +27,16 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   applicationName: siteConfig.name,
-  // Kredit developer di metadata (Nagoya Digital)
-  authors: [{ name: siteConfig.developer.name, url: siteConfig.developer.url }],
+  // Penulis konten = redaksi; kredit developer (Nagoya Digital) tetap di
+  // metadata "creator" dan footer situs.
+  authors: [{ name: `Redaksi ${siteConfig.name}`, url: siteConfig.url }],
   creator: siteConfig.developer.name,
   publisher: siteConfig.name,
+  // Catatan: canonical TIDAK diset di sini (akan diwarisi semua halaman);
+  // tiap halaman menetapkan canonical-nya sendiri.
+  alternates: {
+    types: { "application/rss+xml": [{ url: "/feed.xml", title: `${siteConfig.name} — RSS` }] },
+  },
   openGraph: {
     type: "website",
     locale: "id_ID",

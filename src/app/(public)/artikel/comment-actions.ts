@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { hit } from "@/lib/rate-limit";
 
 /**
  * Komentar publik — WAJIB LOGIN. Komentar baru berstatus PENDING,
@@ -30,6 +31,11 @@ export async function postComment(
   const parsed = schema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Input tidak valid" };
+  }
+  // Anti spam: maks 5 komentar per 10 menit per akun
+  const rate = hit(`comment:${session.user.id}`, 5, 10 * 60 * 1000);
+  if (!rate.allowed) {
+    return { error: `Terlalu banyak komentar. Coba lagi dalam ${Math.ceil(rate.retryAfterSec / 60)} menit.` };
   }
   try {
     await prisma.comment.create({

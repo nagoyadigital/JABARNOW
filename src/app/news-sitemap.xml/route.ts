@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { siteConfig } from "@/lib/site-config";
 
@@ -6,6 +7,7 @@ import { siteConfig } from "@/lib/site-config";
  * Format khusus news:news. Fallback kosong bila DB belum tersambung.
  */
 export async function GET() {
+  await connection(); // selalu data terbaru dari DB (bukan prerender saat build)
   const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
 
   let articles: { slug: string; title: string; publishedAt: Date | null }[] = [];

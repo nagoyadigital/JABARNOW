@@ -208,3 +208,70 @@ export async function getPublishedSlugs(): Promise<
     return [];
   }
 }
+
+/** Data taksonomi untuk halaman arsip — null bila slug tidak ada (→ 404). */
+export async function getCategoryBySlug(slug: string) {
+  try {
+    return await prisma.category.findUnique({
+      where: { slug },
+      select: { name: true, slug: true, description: true },
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function getRegionBySlug(slug: string) {
+  try {
+    return await prisma.region.findUnique({ where: { slug }, select: { name: true, slug: true, type: true } });
+  } catch {
+    return null;
+  }
+}
+
+export async function getTagBySlug(slug: string) {
+  try {
+    return await prisma.tag.findUnique({ where: { slug }, select: { name: true, slug: true } });
+  } catch {
+    return null;
+  }
+}
+
+/** Semua slug taksonomi (untuk sitemap). */
+export async function listTaxonomySlugs(): Promise<{
+  categories: string[];
+  regions: string[];
+  tags: string[];
+}> {
+  try {
+    const [categories, regions, tags] = await Promise.all([
+      prisma.category.findMany({ select: { slug: true } }),
+      prisma.region.findMany({ select: { slug: true } }),
+      // Hanya tag yang benar-benar dipakai artikel tayang (hindari halaman tipis)
+      prisma.tag.findMany({
+        where: { articles: { some: { article: { status: "PUBLISHED" } } } },
+        select: { slug: true },
+        take: 2000,
+      }),
+    ]);
+    return {
+      categories: categories.map((c) => c.slug),
+      regions: regions.map((r) => r.slug),
+      tags: tags.map((t) => t.slug),
+    };
+  } catch {
+    return { categories: [], regions: [], tags: [] };
+  }
+}
+
+/** Tambah 1 view (dipanggil setelah respons halaman artikel terkirim). */
+export async function incrementArticleView(slug: string): Promise<void> {
+  try {
+    await prisma.article.updateMany({
+      where: { slug, status: "PUBLISHED" },
+      data: { viewCount: { increment: 1 } },
+    });
+  } catch {
+    /* metrik best-effort */
+  }
+}

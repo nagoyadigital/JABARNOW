@@ -88,7 +88,12 @@ cp .env.example .env   # isi nilai bila fitur backend sudah dibutuhkan
 npm run dev            # http://localhost:3000
 npm run build          # build produksi
 npm run lint           # ESLint
+npm run typecheck      # cek tipe TypeScript
+npm test               # tes unit (node:test, folder tests/)
 ```
+
+CI GitHub Actions (`.github/workflows/ci.yml`) menjalankan lint, cek tipe,
+tes unit, dan build untuk setiap push/PR ke `main`.
 
 ### Environment variables
 Lihat `.env.example` untuk daftar lengkap (Supabase, Cloudflare R2, Auth.js,
@@ -137,6 +142,30 @@ GA4/GSC opsional). File `.env` tidak di-commit.
 - `NEXT_PUBLIC_GA4_MEASUREMENT_ID` → aktifkan Google Analytics 4.
 - `GSC_VERIFICATION` → verifikasi Google Search Console. Submit
   `https://jabarnow.id/sitemap.xml` & `/news-sitemap.xml` di GSC.
+
+## Audit & perapian (23 Okt 2026)
+
+Ringkasan perubahan dari audit kode, SEO, dan keamanan:
+
+- **Keamanan:** role/status user dicek ulang ke DB tiap menit (user yang
+  di-suspend langsung keluar), batas percobaan login (5 gagal/15 menit per
+  email, 20 per IP), header keamanan (nosniff, frame, referrer, HSTS,
+  permissions), upload dicek dari isi file (magic bytes), batas komentar
+  5/10 menit, Next.js 16.4.2 & DOMPurify 3.4.17 (patch kerentanan kritis).
+- **SEO:** JSON-LD aman dari injeksi + `publisher.logo`, BreadcrumbList,
+  WebSite + SearchAction; sitemap mencakup kategori/wilayah/tag; news-sitemap
+  di robots.txt; RSS `/feed.xml`; gambar OG default; h1 & meta description di
+  halaman arsip; slug tak dikenal → 404 asli; tag tipis → noindex.
+- **Konten & iklan:** konten contoh hanya di mode demo (produksi tanpa artikel
+  tidak menampilkan berita palsu); Most Read memakai data nyata + penghitung
+  views (bot tidak dihitung); kampanye Ads Manager kini tampil di situs, kotak
+  "Area Iklan" hanya di mode pratinjau.
+- **Halaman baru:** `/terbaru`, `/populer`, CMS Kategori, Tag, Wilayah
+  (sebelumnya tautan menu mengarah ke 404).
+- **Build:** tidak lagi gagal bila database tidak bisa diakses saat build.
+
+Mode demo diatur lewat `NEXT_PUBLIC_DEMO_CONTENT` dan `NEXT_PUBLIC_ADS_PREVIEW`
+(lihat `.env.example`). Laporan lengkap: dokumen "Audit JabarNow!".
 
 ## AI Desk — Redaksi Otomatis (Tahap 7+)
 

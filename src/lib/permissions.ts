@@ -33,6 +33,8 @@ export const PERMISSIONS = [
   "social.manage",
   // Setujui / tolak paket sosmed sebelum dijadwalkan/diunduh
   "social.approve",
+  // Kelola kategori & tag (taksonomi redaksi)
+  "taxonomy.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -64,6 +66,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "settings.manage",
     "ai.manage",
     "social.manage",
+    "taxonomy.manage",
     // TIDAK termasuk design.manage (hanya Super Admin)
     // TIDAK termasuk ai.approve (hanya Super Admin & Pemimpin Redaksi)
   ],
@@ -85,6 +88,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "ai.approve",
     "social.manage",
     "social.approve",
+    "taxonomy.manage",
   ],
 
   EDITOR: [
@@ -98,6 +102,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "media.manage",
     "comments.moderate",
     "social.manage",
+    "taxonomy.manage",
   ],
 
   REPORTER: [

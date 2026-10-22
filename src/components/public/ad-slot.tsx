@@ -1,19 +1,26 @@
+import type { AdPlacementSlot } from "@prisma/client";
+import { DbAdSlot } from "@/components/public/db-ad-slot";
+import { ADS_PREVIEW } from "@/lib/demo";
+
 /**
- * AdSlot — placeholder penempatan iklan manual.
- * - active=false & preview=false → tidak render apa pun (tanpa blok kosong besar).
- * - preview=true → tampilkan placeholder bergaya untuk MELIHAT posisi iklan
- *   (pratinjau desain; materi nyata nanti dari Ads Manager / DbAdSlot).
+ * AdSlot — titik penempatan iklan manual.
+ * 1. Bila ada kampanye AKTIF dari Ads Manager untuk placement ini → tampilkan
+ *    materinya (DbAdSlot).
+ * 2. Bila tidak ada → kotak pratinjau "Area Iklan" HANYA saat `preview` dan
+ *    mode pratinjau iklan aktif (development / NEXT_PUBLIC_ADS_PREVIEW=1).
+ *    Di produksi tanpa kampanye: tidak merender apa pun.
  * Reserve height untuk cegah CLS (10-CMS-MEDIA-AND-ADS.md).
  */
-export function AdSlot({
-  placement,
-  label,
-  size,
-  height = 90,
-  active = false,
-  preview = false,
-  className,
-}: {
+const PLACEMENT_SLOT: Record<string, AdPlacementSlot> = {
+  "header-leaderboard": "HEADER_LEADERBOARD",
+  sidebar: "SIDEBAR",
+  "in-feed": "IN_FEED",
+  "in-article": "IN_ARTICLE",
+  footer: "FOOTER",
+  "mobile-after-hero": "MOBILE_AFTER_HERO",
+};
+
+export async function AdSlot(props: {
   placement: string;
   label?: string;
   size?: string;
@@ -22,9 +29,34 @@ export function AdSlot({
   preview?: boolean;
   className?: string;
 }) {
-  // Tanpa aktif & tanpa preview → tidak render blok
-  if (!active && !preview) return null;
+  const slot = PLACEMENT_SLOT[props.placement];
+  const fallback =
+    props.active || (props.preview && ADS_PREVIEW) ? <AdPlaceholder {...props} /> : null;
+  if (!slot) return fallback;
+  return (
+    <DbAdSlot
+      placement={slot}
+      minHeight={props.height}
+      className={props.className}
+      fallback={fallback}
+    />
+  );
+}
 
+/** Kotak pratinjau posisi iklan (bukan materi iklan). */
+function AdPlaceholder({
+  placement,
+  label,
+  size,
+  height = 90,
+  className,
+}: {
+  placement: string;
+  label?: string;
+  size?: string;
+  height?: number;
+  className?: string;
+}) {
   return (
     <div
       className={`flex flex-col items-center justify-center gap-1 rounded-[var(--radius-card)] border border-dashed border-brand/30 bg-brand/[0.04] ${className ?? ""}`}

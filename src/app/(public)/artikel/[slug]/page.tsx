@@ -1,8 +1,19 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import { after } from "next/server";
 import Image from "next/image";
 import Link from "next/link";
-import { getPublishedArticleBySlug, getRelatedArticles } from "@/lib/articles";
+import {
+  cardToArticle,
+  getPublishedArticleBySlug,
+  getRelatedArticles,
+  incrementArticleView,
+  listMostRead,
+} from "@/lib/articles";
+import { absoluteUrl, breadcrumbLd, jsonLdString, publisherLd } from "@/lib/seo";
+import { DEMO_CONTENT } from "@/lib/demo";
+import type { Article } from "@/lib/types";
 import { renderArticleHtml } from "@/lib/render-content";
 import { siteConfig } from "@/lib/site-config";
 import { formatWibDateTime, readingTimeMinutes } from "@/lib/format";
@@ -29,9 +40,13 @@ export const instant = false;
  * ad in-article, author card, reaksi. Sidebar: iklan + Most Read (sticky).
  */
 
+/** Artikel contoh hanya bisa dibuka di mode demo (development). */
 function isSample(slug: string) {
-  return slug.startsWith("contoh-artikel");
+  return DEMO_CONTENT && slug.startsWith("contoh-artikel");
 }
+
+/** Bot/crawler/preview link tidak dihitung sebagai pembaca. */
+const NON_HUMAN_UA = /bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram|discord|lighthouse|headless/i;
 
 export async function generateMetadata({
   params,
@@ -64,28 +79,37 @@ export async function generateMetadata({
       title,
       description,
       publishedTime: article.publishedAt?.toISOString(),
+      modifiedTime: article.updatedAt.toISOString(),
+      section: article.category?.name,
+      tags: article.tags.map((t) => t.tag.name),
       images: image ? [{ url: image }] : undefined,
     },
-    twitter: { card: "summary_large_image", title, description },
+    twitter: { card: "summary_large_image", title, description, images: image ? [image] : undefined },
   };
 }
 
 /** Shell layout bersama (konten kiri + sidebar kanan). */
 function ArticleShell({
   children,
-  jsonLd,
+  jsonLd = [],
+  mostRead24h,
+  mostRead7d,
 }: {
   children: React.ReactNode;
-  jsonLd?: object;
+  jsonLd?: object[];
+  mostRead24h: Article[];
+  mostRead7d: Article[];
 }) {
   return (
     <div className="container-jn py-8">
-      {jsonLd && (
+      {jsonLd.map((ld, i) => (
         <script
+          key={i}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          // jsonLdString meng-escape "<" dkk. agar judul tidak bisa menutup tag script
+          dangerouslySetInnerHTML={{ __html: jsonLdString(ld) }}
         />
-      )}
+      ))}
       <div className="grid gap-8 lg:grid-cols-12">
         <article className="lg:col-span-8">
           <div className="mx-auto max-w-3xl">{children}</div>
@@ -101,7 +125,9 @@ function ArticleShell({
               height={250}
               preview
             />
-            <MostRead data24h={mostRead24h} data7d={mostRead7d} />
+            {mostRead24h.length + mostRead7d.length > 0 && (
+              <MostRead data24h={mostRead24h} data7d={mostRead7d} />
+            )}
             <AdSlot
               placement="sidebar"
               label="Sidebar (Half Page)"
@@ -132,10 +158,17 @@ export default async function ArticleDetailPage({
   const html = renderArticleHtml(article.contentJson);
   const url = `${siteConfig.url}/artikel/${article.slug}`;
   const publishedIso = article.publishedAt?.toISOString();
-  const [related, commentsOn] = await Promise.all([
+  const [related, commentsOn, read24, read7, reqHeaders] = await Promise.all([
     getRelatedArticles(article.slug, article.category?.slug),
     areCommentsEnabled(),
+    listMostRead(24, 5),
+    listMostRead(24 * 7, 5),
+    headers(),
   ]);
+  // Hitung pembaca setelah respons terkirim (tidak memperlambat halaman)
+  if (!NON_HUMAN_UA.test(reqHeaders.get("user-agent") ?? "")) {
+    after(() => incrementArticleView(article.slug));
+  }
   const comments = commentsOn ? await getApprovedComments(article.id) : [];
   // Perkiraan waktu baca dari teks konten (strip tag)
   const readMin = readingTimeMinutes(html.replace(/<[^>]+>/g, " "));
@@ -148,13 +181,30 @@ export default async function ArticleDetailPage({
     datePublished: publishedIso,
     dateModified: article.updatedAt.toISOString(),
     author: [{ "@type": "Person", name: article.author.name }],
-    publisher: { "@type": "Organization", name: siteConfig.name, url: siteConfig.url },
+    publisher: publisherLd(),
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
-    image: article.cover?.url ? [article.cover.url] : undefined,
+    image: [article.ogImageUrl || article.cover?.url || absoluteUrl("/opengraph-image")],
+    inLanguage: "id-ID",
+    articleSection: article.category?.name,
+    keywords: article.tags.map((t) => t.tag.name).join(", ") || undefined,
+    contentLocation: article.region
+      ? { "@type": "Place", name: `${article.region.name}, Jawa Barat` }
+      : undefined,
   };
+  const crumbs = breadcrumbLd([
+    { name: "Beranda", path: "/" },
+    ...(article.category
+      ? [{ name: article.category.name, path: `/kategori/${article.category.slug}` }]
+      : []),
+    { name: article.title, path: `/artikel/${article.slug}` },
+  ]);
 
   return (
-    <ArticleShell jsonLd={jsonLd}>
+    <ArticleShell
+      jsonLd={[jsonLd, crumbs]}
+      mostRead24h={read24.map(cardToArticle)}
+      mostRead7d={read7.map(cardToArticle)}
+    >
       <Breadcrumb
         items={[
           { label: "Beranda", href: "/" },
@@ -258,7 +308,7 @@ function SampleArticle() {
 
   const readMin = readingTimeMinutes(a.paragraphs.join(" "));
   return (
-    <ArticleShell>
+    <ArticleShell mostRead24h={mostRead24h} mostRead7d={mostRead7d}>
       <Breadcrumb
         items={[
           { label: "Beranda", href: "/" },

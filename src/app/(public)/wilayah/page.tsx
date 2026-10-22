@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { SectionHeading } from "@/components/public/section-heading";
 
@@ -26,6 +27,8 @@ async function loadRegions() {
 }
 
 export default async function WilayahIndexPage() {
+  // Render saat request: build tidak bergantung pada database yang menyala
+  await connection();
   const regions = await loadRegions();
   const kota = regions.filter((r) => r.type === "KOTA");
   const kabupaten = regions.filter((r) => r.type === "KABUPATEN");

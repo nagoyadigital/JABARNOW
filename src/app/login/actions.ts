@@ -22,7 +22,7 @@ export async function loginAction(
     return {};
   } catch (error) {
     if (error instanceof AuthError) {
-      return { error: "Email atau kata sandi salah." };
+      return { error: "Email atau kata sandi salah. Terlalu banyak percobaan gagal akan dikunci 15 menit." };
     }
     // signIn melempar redirect saat sukses — biarkan Next.js menanganinya
     throw error;

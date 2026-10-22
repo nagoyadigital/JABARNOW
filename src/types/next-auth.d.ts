@@ -23,5 +23,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     role?: Role;
     isStaff?: boolean;
+    // Waktu terakhir role/status dicek ulang ke DB (ms)
+    checkedAt?: number;
   }
 }

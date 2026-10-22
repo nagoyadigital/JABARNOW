@@ -15,13 +15,16 @@ export async function DbAdSlot({
   placement,
   minHeight = 90,
   className,
+  fallback = null,
 }: {
   placement: AdPlacementSlot;
   minHeight?: number;
   className?: string;
+  /** Ditampilkan bila tidak ada kampanye aktif (mis. pratinjau posisi). */
+  fallback?: React.ReactNode;
 }) {
   const ad = await getActiveAd(placement);
-  if (!ad) return null;
+  if (!ad) return fallback;
 
   const wrap = `overflow-hidden rounded-[var(--radius-card)] ${className ?? ""}`;
 
@@ -76,5 +79,5 @@ export async function DbAdSlot({
     );
   }
 
-  return null;
+  return fallback;
 }

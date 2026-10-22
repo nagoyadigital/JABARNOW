@@ -1,0 +1,41 @@
+# CI JabarNow! — dijalankan untuk setiap push & pull request ke main.
+# Memastikan kode lolos lint, cek tipe, tes unit, dan build produksi
+# sebelum di-deploy ke VPS.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Nilai dummy: build tidak terhubung ke database/storage sungguhan
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/ci
+      AUTH_SECRET: ci-only-not-secret
+      NEXT_PUBLIC_SITE_URL: https://jabarnow.id
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit test
+        run: npm test
+      - name: Build
+        run: npm run build

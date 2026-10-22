@@ -4,10 +4,12 @@ import { hasPermission } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { uploadObject, isStorageConfigured } from "@/lib/storage";
 import { writeAudit } from "@/lib/audit";
+import { sniffImageMime } from "@/lib/file-sniff";
 
 /**
  * Upload media ke Cloudflare R2 + simpan metadata.
- * Proteksi: hanya staf dengan media.manage. Validasi MIME & ukuran.
+ * Proteksi: hanya staf dengan media.manage. Validasi MIME (dari isi file,
+ * bukan header browser) & ukuran.
  */
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -46,14 +48,19 @@ export async function POST(req: NextRequest) {
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    const { key, url } = await uploadObject(buffer, file.name, file.type);
+    // Tipe sebenarnya dari isi file; tolak bila tidak cocok dengan gambar yang diizinkan
+    const realType = sniffImageMime(buffer);
+    if (!realType || !ALLOWED_MIME.includes(realType)) {
+      return NextResponse.json({ error: "Isi file bukan gambar yang didukung" }, { status: 415 });
+    }
+    const { key, url } = await uploadObject(buffer, file.name, realType);
 
     const asset = await prisma.mediaAsset.create({
       data: {
         storageKey: key,
         url,
         fileName: file.name,
-        mimeType: file.type,
+        mimeType: realType,
         sizeBytes: file.size,
         uploaderId: session.user.id,
       },

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Hero } from "@/components/public/hero";
 import { BreakingTicker } from "@/components/public/breaking-ticker";
@@ -16,6 +17,8 @@ import {
   cardToArticle,
 } from "@/lib/articles";
 import { PopularTags } from "@/components/public/tag-chips";
+import { DEMO_CONTENT } from "@/lib/demo";
+import { jsonLdString, websiteLd } from "@/lib/seo";
 import type { Article } from "@/lib/types";
 import {
   heroMain as sHeroMain,
@@ -27,6 +30,13 @@ import {
   featuredCategories,
   breakingItems as sBreaking,
 } from "@/lib/sample-content";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+    types: { "application/rss+xml": [{ url: "/feed.xml", title: "JabarNow! — RSS" }] },
+  },
+};
 
 // Data dari DB saat request → route blocking (Cache Components).
 export const instant = false;
@@ -46,6 +56,22 @@ export default async function HomePage() {
   ]);
 
   const hasData = latestDb.length > 0;
+
+  // Produksi tanpa artikel: tampilkan keadaan kosong, bukan berita contoh
+  if (!hasData && !DEMO_CONTENT) {
+    return (
+      <div className="container-jn py-16 text-center">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLdString(websiteLd()) }}
+        />
+        <h1 className="text-2xl font-extrabold">Berita segera hadir</h1>
+        <p className="mt-2 text-sm text-charcoal/60">
+          Redaksi JabarNow! sedang menyiapkan berita terbaru dari 27 kabupaten/kota di Jawa Barat.
+        </p>
+      </div>
+    );
+  }
   const latestArticles: Article[] = hasData
     ? latestDb.map(cardToArticle)
     : sLatest;
@@ -56,12 +82,13 @@ export default async function HomePage() {
   // Sisanya untuk Berita Terbaru
   const feed = hasData ? latestArticles.slice(3) : latestArticles;
 
-  const mostRead24h = read24.length ? read24.map(cardToArticle) : sMostRead24h;
-  const mostRead7d = read7.length ? read7.map(cardToArticle) : sMostRead7d;
+  const mostRead24h = read24.length || !DEMO_CONTENT ? read24.map(cardToArticle) : sMostRead24h;
+  const mostRead7d = read7.length || !DEMO_CONTENT ? read7.map(cardToArticle) : sMostRead7d;
 
   // Jabar Hari Ini: artikel ber-wilayah (atau fallback)
   const regionArticles = latestArticles.filter((a) => a.region).slice(0, 4);
-  const jabarHariIni = regionArticles.length >= 2 ? regionArticles : sJabarHariIni;
+  const jabarHariIni =
+    regionArticles.length >= 2 || !DEMO_CONTENT ? regionArticles : sJabarHariIni;
 
   const breakingItems = hasData
     ? latestArticles.slice(0, 3).map((a) => ({ label: a.title, href: `/artikel/${a.slug}` }))
@@ -73,6 +100,10 @@ export default async function HomePage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdString(websiteLd()) }}
+      />
       {/* Breaking news (ticker manual) */}
       <BreakingTicker items={breakingItems} />
 
@@ -153,9 +184,11 @@ export default async function HomePage() {
             </section>
 
             {/* Jabar Hari Ini */}
-            <div className="mt-10">
-              <JabarHariIni articles={jabarHariIni} />
-            </div>
+            {jabarHariIni.length > 0 && (
+              <div className="mt-10">
+                <JabarHariIni articles={jabarHariIni} />
+              </div>
+            )}
 
             {/* Kategori Pilihan */}
             <div className="mt-10">
@@ -166,7 +199,9 @@ export default async function HomePage() {
           {/* Sidebar — Most Read + iklan sidebar; sticky di desktop */}
           <aside className="lg:col-span-4">
             <div className="lg:sticky lg:top-4 space-y-6">
-              <MostRead data24h={mostRead24h} data7d={mostRead7d} />
+              {mostRead24h.length + mostRead7d.length > 0 && (
+                <MostRead data24h={mostRead24h} data7d={mostRead7d} />
+              )}
 
               {/* Tag Populer */}
               {popularTags.length > 0 && (

@@ -27,9 +27,9 @@ export const cmsNavGroups: CmsNavGroup[] = [
       { label: "Tulis Artikel", href: "/cms/artikel/tulis", permission: "article.create" },
       { label: "Review & Persetujuan", href: "/cms/review", permission: "article.review" },
       { label: "Media Library", href: "/cms/media", permission: "media.manage" },
-      { label: "Kategori", href: "/cms/kategori" },
-      { label: "Wilayah", href: "/cms/wilayah" },
-      { label: "Tag", href: "/cms/tag" },
+      { label: "Kategori", href: "/cms/kategori", permission: "taxonomy.manage" },
+      { label: "Wilayah", href: "/cms/wilayah", permission: "taxonomy.manage" },
+      { label: "Tag", href: "/cms/tag", permission: "taxonomy.manage" },
       { label: "Komentar", href: "/cms/komentar", permission: "comments.moderate" },
     ],
   },
@@ -64,8 +64,7 @@ export const cmsNavGroups: CmsNavGroup[] = [
     items: [
       { label: "Users & Roles", href: "/cms/users", permission: "users.manage" },
       { label: "Website Settings", href: "/cms/settings", permission: "settings.manage" },
-      { label: "Notifikasi", href: "/cms/notifikasi" },
-      { label: "Audit Log", href: "/cms/audit" },
+      { label: "Audit Log", href: "/cms/audit", permission: "users.manage" },
     ],
   },
 ];
