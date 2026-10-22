@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { assertPermission } from "@/lib/guard";
@@ -9,6 +10,7 @@ import { writeAudit } from "@/lib/audit";
 import { slugify, withSuffix } from "@/lib/slug";
 import { assertTiptapJson } from "@/lib/sanitize";
 import type { ArticleStatus } from "@prisma/client";
+import { autoGenerateSocial } from "@/lib/social/generate";
 
 /**
  * Server actions editorial. Semua transisi status diverifikasi SERVER-SIDE.
@@ -240,6 +242,8 @@ export async function reviewArticle(
       entity: "Article",
       entityId: id,
     });
+    // Studio Sosmed: siapkan paket feed + carousel setelah artikel disetujui
+    if (decision === "APPROVED") after(() => autoGenerateSocial(id));
     revalidatePath("/cms/review");
     return { ok: true };
   } catch (err) {
@@ -297,6 +301,8 @@ export async function publishArticle(
         entityId: id,
       });
     }
+    // Studio Sosmed: pastikan paket ada (idempoten bila sudah dibuat saat approve)
+    after(() => autoGenerateSocial(id));
     revalidatePath("/cms/artikel");
     revalidatePath("/");
     return { ok: true };

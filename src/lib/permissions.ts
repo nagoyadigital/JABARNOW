@@ -29,6 +29,10 @@ export const PERMISSIONS = [
   // Keputusan akhir artikel tulisan AI (approve/revisi/tolak/publish).
   // Sengaja HANYA Super Admin & Pemimpin Redaksi.
   "ai.approve",
+  // Studio Sosmed: buat & edit paket konten sosmed (feed/carousel)
+  "social.manage",
+  // Setujui / tolak paket sosmed sebelum dijadwalkan/diunduh
+  "social.approve",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -59,6 +63,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "users.manage",
     "settings.manage",
     "ai.manage",
+    "social.manage",
     // TIDAK termasuk design.manage (hanya Super Admin)
     // TIDAK termasuk ai.approve (hanya Super Admin & Pemimpin Redaksi)
   ],
@@ -78,6 +83,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "comments.moderate",
     "ai.manage",
     "ai.approve",
+    "social.manage",
+    "social.approve",
   ],
 
   EDITOR: [
@@ -90,6 +97,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     // publish/schedule hanya jika diberikan izin (default tidak)
     "media.manage",
     "comments.moderate",
+    "social.manage",
   ],
 
   REPORTER: [

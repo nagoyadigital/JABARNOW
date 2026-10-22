@@ -74,7 +74,9 @@ src/
     site-config.ts   # konfigurasi situs + atribusi Nagoya Digital
     navigation.ts    # nav publik + footer 4 kelompok (terkunci)
     cms-navigation.ts# navigation map CMS + permission (acuan)
-    ai/              # AI Desk: scout, parser feed, normalisasi, log agent
+    ai/              # AI Desk: scout, parser feed, normalisasi, log agent, adapter LLM
+    social/          # Studio Sosmed: generator paket, template slide, render PNG
+  assets/            # font brand (OFL) & logo kecil untuk render slide sosmed
 docs/jabarnow/       # 17 dokumen spesifikasi (source of truth)
 public/brand/logo.png# logo resmi (placeholder sebelum upload CMS)
 ```
@@ -106,6 +108,10 @@ GA4/GSC opsional). File `.env` tidak di-commit.
   Trends, Scout terjadwal (cron) + tombol manual, dedup URL & judul lintas
   portal, Radar Topik, Ruang Redaksi AI, log agent. Artikel AI hanya bisa
   diputuskan Pemimpin Redaksi / Super Admin. ✓
+- **Studio Sosmed** — setiap artikel yang disetujui otomatis dibuatkan feed
+  1 slide + carousel (headline, kata sorotan, isi slide, caption, hashtag),
+  3 template bermerek, editor + render ulang, download PNG, Brand Kit,
+  approval Pimred. AI opsional lewat adapter (API sendiri). ✓
 - Build & lint: **lulus** di setiap tahap.
 
 ### Dependency utama
@@ -194,7 +200,67 @@ Pengaturan lanjutan lewat env (opsional): `AI_SCOUT_MAX_AGE_HOURS`,
 `AI_SCOUT_TITLE_DEDUP_HOURS`, `AI_SCOUT_MAX_ITEMS_PER_SOURCE`,
 `AI_SCOUT_OG_IMAGE_LIMIT`, `AI_SCOUT_FETCH_TIMEOUT_MS` (lihat `.env.example`).
 
+## Studio Sosmed — Feed & Carousel Otomatis
+
+Setiap artikel yang **disetujui / tayang** otomatis dibuatkan dua konten:
+
+| Format | Isi | Ukuran |
+| --- | --- | --- |
+| Feed 1 slide | Cover: foto + headline (+ kicker, kata sorotan) | 1080 × 1350 (4:5) |
+| Carousel | Cover + 1–5 slide isi + slide penutup (CTA) | 1080 × 1350 per slide |
+
+Plus headline sosmed + alternatif, caption, dan hashtag. Semua masuk
+**Studio Sosmed → Antrian Sosmed** dengan status *Perlu review*.
+
+**Alur:** artikel di-approve → paket dibuat (di latar belakang) → editor cek &
+edit (template, headline, kata sorotan, isi slide, caption) → **Pimred / Super
+Admin menyetujui** → unduh PNG + salin caption (posting otomatis ke
+IG/TikTok/Threads/FB menyusul di tahap penjadwalan).
+
+**Template** (`src/lib/social/templates.tsx`): *Kotak Putih* (foto + kotak
+headline putih), *Sorot Gelap* (gradasi gelap + headline kapital, kata
+sorotan oranye), *Breaking* (label merah + panel gelap). Warna mengikuti design
+token, font Plus Jakarta Sans + Inter (lisensi OFL, di `src/assets/fonts`).
+
+**Gambar** dirender saat diminta oleh `GET /api/sosmed/render/:id/:slide`
+memakai `next/og` — tidak perlu Chromium/server tambahan dan tidak menumpuk
+file di storage. URL ditandatangani HMAC (`AUTH_SECRET`) dan ber-versi, jadi
+bisa dibuka platform sosmed tanpa login, aman di-cache, dan otomatis berganti
+saat konten atau Brand Kit diubah.
+
+**Foto latar** memakai cover artikel yang sudah disetujui (bukan foto dari
+media lain). Bisa dimatikan per konten → template tipografi.
+
+**Penulis konten:**
+- **Dengan AI** (isi `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL`): headline sosmed
+  + 2 alternatif, kata sorotan, kicker, isi slide, caption & hashtag ditulis AI
+  hanya dari isi artikel yang sudah disetujui. Token & biaya tercatat di
+  `AgentRun`. Bila AI gagal, otomatis jatuh ke jalur tanpa AI.
+- **Tanpa AI**: disusun dari judul, ringkasan, dan paragraf awal (dateline
+  dibuang), hashtag dari wilayah/kategori/tag.
+
+Adapter AI (`src/lib/ai/llm.ts`) mendukung **Anthropic** dan format
+**OpenAI-compatible** (OpenAI, OpenRouter, atau API/gateway sendiri lewat
+`AI_BASE_URL`). Ganti provider cukup lewat `.env`.
+
+**Brand Kit** (`/cms/sosmed/brand-kit`): handle, judul & teks slide penutup,
+template default, jumlah slide isi carousel, hashtag tetap, dan saklar
+"buat paket otomatis".
+
+**Hak akses:** `social.manage` (Super Admin, Administrator, Pemimpin Redaksi,
+Editor) untuk membuat & mengedit; `social.approve` (**Super Admin & Pemimpin
+Redaksi**) untuk menyetujui/menolak. Konten yang diedit setelah disetujui
+otomatis kembali ke *Perlu review*.
+
+**Aktivasi:** deploy seperti biasa (migrasi `20261023120000_studio_sosmed`
+hanya menambah tabel `SocialPost`), pastikan `AUTH_SECRET` terisi, lalu buka
+**Studio Sosmed**. Artikel lama yang sudah tayang bisa dibuatkan paket lewat
+tombol **Buat paket sosmed**.
+
 ### Berikutnya
+- **Penjadwalan & posting otomatis:** sambungkan akun Instagram, Facebook,
+  Threads (Meta Graph API) dan TikTok (Content Posting API), kalender jadwal,
+  kirim ke banyak akun sekaligus.
 - **Tahap 8 — Analis + Brain:** skor 0–100, kategori/wilayah otomatis, flag
   topik sensitif, halaman Brain (gaya & aturan redaksi). Butuh API key AI.
 - **Tahap 9 — Copywriter:** artikel gaya media nasional (straight news &

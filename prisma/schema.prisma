@@ -205,6 +205,8 @@ model Article {
   reactions  Reaction[]
   // Diisi bila artikel ditulis oleh AI Desk (Tahap 7+). Null = artikel manual.
   topic      Topic?
+  // Paket konten sosmed turunan artikel (Studio Sosmed)
+  socialPosts SocialPost[]
 
   @@index([status, publishedAt])
   @@index([categoryId])
@@ -505,4 +507,58 @@ model AgentRun {
   error      String?
 
   @@index([agent, startedAt])
+}
+
+// ============================================================
+// Studio Sosmed — paket konten sosmed turunan artikel
+// (feed 1 slide + carousel). Gambar dirender on-the-fly dari template
+// (next/og), jadi yang disimpan hanya teks & pilihan template.
+// ============================================================
+
+enum SocialFormat {
+  SINGLE // feed 1 slide
+  CAROUSEL // carousel cover + poin + CTA
+}
+
+enum SocialPostStatus {
+  PENDING_REVIEW // siap dicek redaksi
+  APPROVED // disetujui, siap dijadwalkan/diunduh
+  SCHEDULED // terjadwal ke platform (tahap posting otomatis)
+  POSTED // sudah tayang di platform
+  FAILED // gagal posting
+  REJECTED // ditolak redaksi
+}
+
+model SocialPost {
+  id           String           @id @default(cuid())
+  articleId    String
+  format       SocialFormat
+  // Kunci template visual, mis. "kotak-putih" | "sorot" | "breaking"
+  template     String
+  kicker       String?
+  headline     String
+  headlineAlts String[]
+  // Kata/frasa di headline yang diberi warna sorotan
+  highlight    String?
+  // [{ kind: "cover"|"point"|"cta", title?: string, body?: string }]
+  slides       Json
+  caption      String
+  hashtags     String[]
+  // Foto latar (default: cover artikel). Null = template tipografi.
+  imageUrl     String?
+  status       SocialPostStatus @default(PENDING_REVIEW)
+  // "rules" atau "ai:<model>"
+  generatedBy  String           @default("rules")
+  reviewNote   String?
+  reviewedById String?
+  reviewedAt   DateTime?
+  scheduledAt  DateTime?
+  postedAt     DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, format])
+  @@index([status, createdAt])
 }

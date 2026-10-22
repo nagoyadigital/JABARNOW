@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Build mandiri untuk self-host di VPS (folder .next/standalone ringan).
   output: "standalone",
+  // Font & logo untuk render slide Studio Sosmed (dibaca via fs saat runtime)
+  outputFileTracingIncludes: {
+    "/api/sosmed/render/**": ["./src/assets/**/*"],
+  },
   cacheComponents: true,
   partialPrefetching: true,
   images: {

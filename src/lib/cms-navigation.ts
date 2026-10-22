@@ -42,6 +42,13 @@ export const cmsNavGroups: CmsNavGroup[] = [
     ],
   },
   {
+    title: "Studio Sosmed",
+    items: [
+      { label: "Antrian Sosmed", href: "/cms/sosmed", permission: "social.manage" },
+      { label: "Brand Kit", href: "/cms/sosmed/brand-kit", permission: "social.manage" },
+    ],
+  },
+  {
     title: "Monetisasi",
     items: [{ label: "Ads Manager", href: "/cms/ads", permission: "ads.manage" }],
   },
