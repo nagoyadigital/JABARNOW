@@ -3,6 +3,20 @@
 Entri terbaru di paling atas. Cari riwayat dengan
 `grep -n -i "<gejala|komponen>" CHANGELOG_FIXES.md`.
 
+### Fix #2 — CI gagal di Typecheck: `LayoutProps` tak dikenal karena tipe rute belum dibuat
+
+| | |
+|---|---|
+| **Tanggal** | 2026-10-23 |
+| **File** | `package.json` (script `typecheck`) |
+| **Masalah** | Job CI `check` gagal di langkah Typecheck: `src/app/layout.tsx(59,50): error TS2304: Cannot find name 'LayoutProps'`. Sudah gagal di `main` (378081e) sebelum PR #1; langkah Unit test & Build tak pernah sempat berjalan. Di lokal lolos. |
+| **Akar** | `LayoutProps`/`PageProps` adalah tipe global yang DIBUAT Next.js 16 saat `next dev`, `next build`, atau `next typegen` (ke `.next/types`). CI menjalankan `tsc --noEmit` sebelum build, di checkout bersih tanpa `.next` → tipe belum ada. Lokal lolos hanya karena `.next` sisa dev server. |
+| **Fix** | Script `typecheck` → `next typegen && tsc --noEmit` (tipe rute dibuat dulu; berlaku di CI & lokal, workflow tidak diubah). |
+| **Verifikasi** | Reproduksi di git worktree bersih (tanpa `.next`) dengan env CI: tanpa typegen → error TS2304 yang sama; dengan fix → `npm ci`, lint, typecheck, test (15/15), dan `npm run build` semuanya exit 0. Hasil CI GitHub: PENDING verifikasi (menunggu run PR #1 setelah push). |
+| **Pelajaran** | Jangan andalkan `.next` lokal saat menilai typecheck; uji di checkout bersih. Tipe global Next (PageProps/LayoutProps/RouteContext) wajib `next typegen` sebelum `tsc`. |
+| **Log Keyword** | CI, typecheck, LayoutProps, PageProps, TS2304, next typegen, public-layout-infogarut |
+| **Deploy** | BELUM DEPLOY — di branch `feat/layout-infogarut` (PR #1). |
+
 ### Fix #1 — Teks tak terlihat: kelas `text-base` dibaca Tailwind v4 sebagai warna putih
 
 | | |

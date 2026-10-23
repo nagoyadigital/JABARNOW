@@ -15,7 +15,7 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "test": "node --import tsx --test \"tests/**/*.test.ts\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
