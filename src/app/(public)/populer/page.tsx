@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { listMostRead } from "@/lib/articles";
 import { ArticleArchiveList } from "@/components/public/article-list";
 import { SectionHeading } from "@/components/public/section-heading";
+import { FlameIcon } from "@/components/common/icons";
 import { siteConfig } from "@/lib/site-config";
 
 export const instant = false;
@@ -19,7 +20,7 @@ export default async function PopulerPage() {
   const items = await listMostRead(24 * 7, 20);
   return (
     <div className="container-jn py-8">
-      <SectionHeading title="Terpopuler 7 Hari" as="h1" />
+      <SectionHeading title="Terpopuler 7 Hari" as="h1" icon={FlameIcon} />
       <ArticleArchiveList items={items} emptyText="Belum ada data berita populer." />
     </div>
   );

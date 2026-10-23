@@ -52,7 +52,7 @@ export function BreakingTicker({ items }: { items: Item[] }) {
   const current = items[index];
 
   return (
-    <div className="overflow-hidden border-b border-line bg-base">
+    <div className="overflow-hidden bg-base">
       <div className="container-jn flex h-[var(--h-ticker)] items-center gap-3">
         <span className="shrink-0 rounded bg-breaking px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
           Breaking

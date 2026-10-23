@@ -1,35 +1,56 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { ComponentType } from "react";
+import { NewsIcon } from "@/components/common/icons";
 
 /**
- * SectionHeading — judul section dengan aksen brand + tautan "Lihat Semua".
- * Opsional: ikon di samping judul (mis. ikon api untuk Most Read).
+ * SectionHeading — judul section dengan ikon dalam lingkaran oranye muda
+ * (pengganti garis aksen; override design lock 2026-10-23) + tautan
+ * "Lihat Semua". h2 = kapital berjarak ala portal; h1 = judul halaman arsip.
  */
 export function SectionHeading({
   title,
   href,
-  icon,
+  icon: Icon = NewsIcon,
   as: Tag = "h2",
 }: {
   title: string;
   href?: string;
-  icon?: ReactNode;
+  /** Komponen ikon (mis. FlameIcon); default ikon koran. */
+  icon?: ComponentType<{ className?: string }>;
   /** "h1" untuk judul utama halaman arsip (SEO: satu h1 per halaman). */
   as?: "h1" | "h2";
 }) {
+  const isH1 = Tag === "h1";
   return (
-    <div className="mb-4 flex items-end justify-between gap-4">
-      <Tag className="relative flex items-center gap-2 pl-3 text-[length:var(--text-section-mobile)] md:text-[length:var(--text-section-desktop)]">
-        <span className="absolute left-0 top-1/2 h-[1.1em] w-1 -translate-y-1/2 rounded-full bg-brand" />
-        {icon}
-        {title}
-      </Tag>
+    <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="flex min-w-0 items-center gap-3">
+        <span
+          aria-hidden="true"
+          className={`flex shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand ${
+            isH1 ? "h-10 w-10" : "h-8 w-8"
+          }`}
+        >
+          <Icon className={isH1 ? "h-5 w-5" : "h-4 w-4"} />
+        </span>
+        <Tag
+          className={
+            isH1
+              ? "min-w-0 text-[length:var(--text-section-mobile)] font-extrabold md:text-[length:var(--text-section-desktop)]"
+              : "min-w-0 text-sm font-extrabold uppercase tracking-[0.12em] md:text-[15px]"
+          }
+        >
+          {title}
+        </Tag>
+      </div>
       {href && (
         <Link
           href={href}
-          className="shrink-0 text-sm font-medium text-brand hover:underline"
+          className="group/more flex shrink-0 items-center gap-1 text-sm font-medium text-brand"
         >
           Lihat Semua
+          <span aria-hidden="true" className="transition-transform duration-300 group-hover/more:translate-x-1">
+            →
+          </span>
         </Link>
       )}
     </div>

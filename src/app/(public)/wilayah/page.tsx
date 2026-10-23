@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { SectionHeading } from "@/components/public/section-heading";
+import { MapPinIcon } from "@/components/common/icons";
 
 export const instant = false;
 
@@ -35,7 +36,7 @@ export default async function WilayahIndexPage() {
 
   return (
     <div className="container-jn py-8">
-      <SectionHeading title="Wilayah Jawa Barat" />
+      <SectionHeading title="Wilayah Jawa Barat" icon={MapPinIcon} />
       {regions.length === 0 ? (
         <p className="text-sm text-charcoal/60">
           Daftar wilayah akan tampil setelah database tersambung &amp; di-seed.

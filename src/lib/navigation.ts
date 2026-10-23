@@ -1,6 +1,6 @@
 /**
  * Struktur navigasi publik JabarNow! (placeholder Tahap 1).
- * Kategori & wilayah nanti dinamis dari CMS. Jumlah kelompok footer (4) terkunci.
+ * Kategori & wilayah nanti dinamis dari CMS.
  * Homepage TIDAK menampilkan direktori 27 kabupaten/kota.
  */
 
@@ -16,38 +16,31 @@ export const mainCategories: NavLink[] = [
   { label: "Gaya Hidup", href: "/kategori/gaya-hidup" },
 ];
 
-// Footer: empat kelompok terkunci (Tentang Kami, Kategori, Wilayah, Informasi)
+// Footer & sidebar: tiga kelompok tautan (Tentang, Kerjasama, Legal) —
+// override design lock 2026-10-23 (semula 4 kelompok).
 export const footerGroups: { title: string; links: NavLink[] }[] = [
   {
-    title: "Tentang Kami",
+    title: "Tentang JabarNow!",
     links: [
-      { label: "Tentang JabarNow!", href: "/tentang" },
+      { label: "Tentang Kami", href: "/tentang" },
       { label: "Redaksi", href: "/redaksi" },
       { label: "Kontak", href: "/kontak" },
-      { label: "Pedoman Media Siber", href: "/pedoman" },
     ],
   },
   {
-    title: "Kategori",
-    links: mainCategories.slice(0, 5),
-  },
-  {
-    title: "Wilayah",
+    title: "Kerjasama",
     links: [
-      { label: "Semua Wilayah", href: "/wilayah" },
-      { label: "Kota Bandung", href: "/wilayah/kota-bandung" },
-      { label: "Kota Bekasi", href: "/wilayah/kota-bekasi" },
-      { label: "Kota Bogor", href: "/wilayah/kota-bogor" },
-      { label: "Kota Depok", href: "/wilayah/kota-depok" },
+      { label: "Pasang Iklan", href: "/kontak" },
+      { label: "Kirim Rilis Berita", href: "/kontak" },
     ],
   },
   {
-    title: "Informasi",
+    title: "Legal",
     links: [
       { label: "Kebijakan Privasi", href: "/privasi" },
       { label: "Syarat & Ketentuan", href: "/syarat" },
+      { label: "Pedoman Media Siber", href: "/pedoman" },
       { label: "Disclaimer", href: "/disclaimer" },
-      { label: "Pedoman Siber", href: "/pedoman" },
     ],
   },
 ];

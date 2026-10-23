@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTagBySlug, listPublishedByTag } from "@/lib/articles";
 import { ArticleArchiveList } from "@/components/public/article-list";
 import { SectionHeading } from "@/components/public/section-heading";
+import { HashIcon } from "@/components/common/icons";
 import { DEMO_CONTENT } from "@/lib/demo";
 import { siteConfig } from "@/lib/site-config";
 
@@ -37,7 +38,7 @@ export default async function TagPage({
 
   return (
     <div className="container-jn py-8">
-      <SectionHeading title={`#${name}`} as="h1" />
+      <SectionHeading title={`#${name}`} as="h1" icon={HashIcon} />
       <ArticleArchiveList items={items} emptyText="Belum ada artikel dengan tag ini." />
     </div>
   );

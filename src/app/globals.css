@@ -26,7 +26,7 @@
   --text-section-mobile: 21px;
   --text-card-desktop: 18px;
   --text-card-mobile: 16px;
-  --text-article-desktop: 18px;
+  --text-article-desktop: 20px;
   --text-article-mobile: 17px;
   --text-meta: 12px;
 
@@ -95,4 +95,64 @@ h1, h2, h3, h4, h5, h6 {
 :focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
+}
+
+/* ===== Transisi halaman (View Transitions, lihat page-transition.tsx) =====
+   Hanya konten halaman yang beranimasi; sidebar/header/footer diam. */
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-old(.jn-page) {
+  animation: 180ms cubic-bezier(0.4, 0, 1, 1) both jn-page-out;
+}
+::view-transition-new(.jn-page) {
+  animation: 420ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both jn-page-in;
+}
+@keyframes jn-page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+    filter: blur(2px);
+  }
+}
+@keyframes jn-ad-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+@keyframes jn-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(3px);
+  }
+}
+
+/* Buka/tutup <details> (menu Wilayah) dengan tinggi yang beranimasi.
+   Browser lama: tetap berfungsi, hanya tanpa animasi. */
+:root {
+  interpolate-size: allow-keywords;
+}
+details::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition:
+    block-size 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    content-visibility 350ms allow-discrete;
+}
+details[open]::details-content {
+  block-size: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }
