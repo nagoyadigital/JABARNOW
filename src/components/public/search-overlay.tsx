@@ -44,7 +44,7 @@ export function SearchOverlay({
   const triggerCls =
     variant === "dark"
       ? "flex h-8 w-8 items-center justify-center rounded-md text-white/90 transition-colors hover:bg-white/10 hover:text-brand"
-      : "flex h-10 w-10 items-center justify-center rounded-md text-charcoal transition-colors hover:text-brand";
+      : "flex h-11 w-11 items-center justify-center rounded-full bg-muted text-charcoal transition-colors hover:text-brand";
 
   return (
     <>
@@ -81,7 +81,7 @@ export function SearchOverlay({
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Cari berita, topik, atau wilayah…"
                 aria-label="Kata kunci pencarian"
-                className="w-full bg-transparent px-1 py-2.5 text-base outline-none"
+                className="w-full bg-transparent px-1 py-2.5 text-[16px] outline-none"
               />
               <button
                 type="submit"

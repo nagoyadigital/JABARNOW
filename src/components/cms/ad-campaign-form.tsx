@@ -9,7 +9,7 @@ const PLACEMENTS = [
   { value: "SIDEBAR", label: "Sidebar" },
   { value: "IN_FEED", label: "In-Feed" },
   { value: "IN_ARTICLE", label: "In-Article" },
-  { value: "FOOTER", label: "Footer" },
+  { value: "FOOTER", label: "Banner Melayang Bawah (semua halaman)" },
   { value: "MOBILE_AFTER_HERO", label: "Mobile Setelah Hero" },
 ];
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { searchPublished } from "@/lib/articles";
 import { ArticleArchiveList } from "@/components/public/article-list";
 import { SectionHeading } from "@/components/public/section-heading";
+import { SearchIcon } from "@/components/common/icons";
 
 export const instant = false;
 
@@ -33,7 +34,7 @@ export default async function SearchPage({
 
       {q ? (
         <>
-          <SectionHeading title={`Hasil untuk "${q}"`} />
+          <SectionHeading title={`Hasil untuk "${q}"`} icon={SearchIcon} />
           <ArticleArchiveList
             items={items}
             emptyText={`Tidak ada hasil untuk "${q}".`}

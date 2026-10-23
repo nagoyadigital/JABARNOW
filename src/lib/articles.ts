@@ -28,10 +28,10 @@ export async function getPublishedArticleBySlug(slug: string) {
     return await prisma.article.findFirst({
       where: { slug, status: "PUBLISHED" },
       include: {
-        author: { select: { name: true } },
+        author: { select: { name: true, role: true } },
         category: { select: { name: true, slug: true } },
         region: { select: { name: true, slug: true } },
-        cover: { select: { url: true, alt: true } },
+        cover: { select: { url: true, alt: true, caption: true, credit: true } },
         tags: { select: { tag: { select: { name: true, slug: true } } } },
       },
     });
@@ -90,6 +90,29 @@ export async function listMostRead(sinceHours: number, take = 5): Promise<Articl
     })) as ArticleCard[];
   } catch {
     return [];
+  }
+}
+
+/**
+ * Statistik portal untuk widget beranda: total dibaca (jumlah viewCount semua
+ * artikel terbit, sepanjang waktu) + jumlah artikel terbit 30 hari terakhir.
+ * Belum ada log kunjungan harian, jadi tidak ada angka "pageviews 30 hari".
+ */
+export async function getPortalStats(): Promise<{ totalViews: number; published30d: number } | null> {
+  const since = new Date(Date.now() - 30 * 24 * 3600_000);
+  try {
+    const [views, published30d] = await Promise.all([
+      prisma.article.aggregate({
+        where: { status: "PUBLISHED" },
+        _sum: { viewCount: true },
+      }),
+      prisma.article.count({
+        where: { status: "PUBLISHED", publishedAt: { gte: since } },
+      }),
+    ]);
+    return { totalViews: views._sum.viewCount ?? 0, published30d };
+  } catch {
+    return null;
   }
 }
 
@@ -177,6 +200,7 @@ export async function searchPublished(q: string): Promise<ArticleCard[]> {
 export async function getRelatedArticles(
   currentSlug: string,
   categorySlug: string | undefined,
+  take = 3,
 ): Promise<ArticleCard[]> {
   try {
     return (await prisma.article.findMany({
@@ -187,7 +211,7 @@ export async function getRelatedArticles(
       },
       select: cardSelect,
       orderBy: { publishedAt: "desc" },
-      take: 3,
+      take,
     })) as ArticleCard[];
   } catch {
     return [];

@@ -24,6 +24,18 @@ export const siteConfig = {
     alt: "JabarNow!",
   },
   copyrightYear: 2026,
+  // Akun media sosial resmi. Kosongkan href bila akun belum ada (ikon tampil
+  // non-aktif). followers diisi manual (angka) untuk widget "Ikuti Kami";
+  // null = tampilkan "Ikuti" tanpa angka.
+  social: [
+    { platform: "facebook", label: "Facebook", href: "", followers: null },
+    { platform: "instagram", label: "Instagram", href: "", followers: null },
+    { platform: "youtube", label: "YouTube", href: "", followers: null },
+    { platform: "x", label: "X", href: "", followers: null },
+    { platform: "tiktok", label: "TikTok", href: "", followers: null },
+  ] as { platform: SocialPlatform; label: string; href: string; followers: number | null }[],
 } as const;
+
+export type SocialPlatform = "facebook" | "instagram" | "youtube" | "x" | "tiktok";
 
 export type SiteConfig = typeof siteConfig;

@@ -24,7 +24,7 @@ const PLACEMENT_LABEL: Record<string, string> = {
   SIDEBAR: "Sidebar",
   IN_FEED: "In-Feed",
   IN_ARTICLE: "In-Article",
-  FOOTER: "Footer",
+  FOOTER: "Banner Melayang Bawah",
   MOBILE_AFTER_HERO: "Mobile Setelah Hero",
 };
 

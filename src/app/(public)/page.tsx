@@ -1,22 +1,20 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { Hero } from "@/components/public/hero";
-import { BreakingTicker } from "@/components/public/breaking-ticker";
-import { MostRead } from "@/components/public/most-read";
+import Link from "next/link";
 import { AdSlot } from "@/components/public/ad-slot";
 import { SectionHeading } from "@/components/public/section-heading";
-import {
-  StandardNewsCard,
-  HorizontalNewsRow,
-} from "@/components/public/news-cards";
-import { JabarHariIni, KategoriPilihan } from "@/components/public/home-sections";
+import { ClockIcon } from "@/components/common/icons";
+import { TrendingBlock } from "@/components/public/home-trending";
+import { HighlightCarousel } from "@/components/public/highlight-carousel";
+import { HorizontalNewsRow } from "@/components/public/news-cards";
+import { SocialTiles } from "@/components/public/social-links";
+import { PortalStats } from "@/components/public/portal-stats";
 import {
   listLatestPublished,
   listMostRead,
-  listPopularTags,
+  getPortalStats,
   cardToArticle,
 } from "@/lib/articles";
-import { PopularTags } from "@/components/public/tag-chips";
 import { DEMO_CONTENT } from "@/lib/demo";
 import { jsonLdString, websiteLd } from "@/lib/seo";
 import type { Article } from "@/lib/types";
@@ -25,10 +23,6 @@ import {
   heroSecondary as sHeroSecondary,
   latestArticles as sLatest,
   mostRead24h as sMostRead24h,
-  mostRead7d as sMostRead7d,
-  jabarHariIni as sJabarHariIni,
-  featuredCategories,
-  breakingItems as sBreaking,
 } from "@/lib/sample-content";
 
 export const metadata: Metadata = {
@@ -41,18 +35,25 @@ export const metadata: Metadata = {
 // Data dari DB saat request → route blocking (Cache Components).
 export const instant = false;
 
+/** Gabung beberapa daftar tanpa artikel ganda (berdasarkan slug). */
+function uniqueBySlug(...lists: Article[][]): Article[] {
+  const seen = new Set<string>();
+  return lists.flat().filter((a) => !seen.has(a.slug) && seen.add(a.slug));
+}
+
 /**
- * Homepage — komposisi penuh, data NYATA dari database.
- * Fallback ke konten contoh bila DB kosong (belum ada artikel published).
- * Urutan sesuai 02-HOMEPAGE-DESKTOP.md & 03-HOMEPAGE-MOBILE.md.
+ * Homepage — layout feed ala portal modern (override design lock 2026-10-23):
+ * Trending (foto + judul: 1 besar + #2–#5) → Highlight (carousel) → Berita Terbaru (list
+ * ringkas, dibatasi + tombol ke /terbaru); kolom kanan: Ikuti Kami,
+ * Statistik Portal, iklan.
+ * Data NYATA dari database; fallback konten contoh bila DB kosong.
  */
 export default async function HomePage() {
   await connection(); // render di request time (DB + Date.now di Most Read)
-  const [latestDb, read24, read7, popularTags] = await Promise.all([
-    listLatestPublished(12),
+  const [latestDb, read24, stats] = await Promise.all([
+    listLatestPublished(20),
     listMostRead(24, 5),
-    listMostRead(24 * 7, 5),
-    listPopularTags(12),
+    getPortalStats(),
   ]);
 
   const hasData = latestDb.length > 0;
@@ -74,29 +75,17 @@ export default async function HomePage() {
   }
   const latestArticles: Article[] = hasData
     ? latestDb.map(cardToArticle)
-    : sLatest;
-
-  // Hero: artikel terbaru pertama + 2 berikutnya (atau fallback)
-  const heroMain = hasData ? latestArticles[0] : sHeroMain;
-  const heroSecondary = hasData ? latestArticles.slice(1, 3) : sHeroSecondary;
-  // Sisanya untuk Berita Terbaru
-  const feed = hasData ? latestArticles.slice(3) : latestArticles;
+    : uniqueBySlug([sHeroMain], sHeroSecondary, sLatest);
 
   const mostRead24h = read24.length || !DEMO_CONTENT ? read24.map(cardToArticle) : sMostRead24h;
-  const mostRead7d = read7.length || !DEMO_CONTENT ? read7.map(cardToArticle) : sMostRead7d;
 
-  // Jabar Hari Ini: artikel ber-wilayah (atau fallback)
-  const regionArticles = latestArticles.filter((a) => a.region).slice(0, 4);
-  const jabarHariIni =
-    regionArticles.length >= 2 || !DEMO_CONTENT ? regionArticles : sJabarHariIni;
-
-  const breakingItems = hasData
-    ? latestArticles.slice(0, 3).map((a) => ({ label: a.title, href: `/artikel/${a.slug}` }))
-    : sBreaking;
-
-  // Berita terbaru: 3 kartu bergambar (grid) + sisanya list horizontal (mixed)
-  const gridLatest = feed.slice(0, 3);
-  const listLatest = feed.slice(3);
+  // Trending: terpopuler 24 jam, dilengkapi artikel terbaru hingga 5
+  const trending = uniqueBySlug(mostRead24h, latestArticles).slice(0, 5);
+  const trendingSlugs = new Set(trending.map((a) => a.slug));
+  // Highlight: artikel terbaru di luar Trending
+  const highlight = latestArticles.filter((a) => !trendingSlugs.has(a.slug)).slice(0, 8);
+  // Berita Terbaru: 8 terbaru saja (list ringkas); selebihnya di /terbaru
+  const feed = latestArticles.slice(0, 8);
 
   return (
     <>
@@ -104,117 +93,76 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdString(websiteLd()) }}
       />
-      {/* Breaking news (ticker manual) */}
-      <BreakingTicker items={breakingItems} />
 
       <div className="container-jn py-6 md:py-8">
-        {/* Iklan leaderboard (desktop) — contoh posisi di atas hero */}
-        <div className="mb-6 hidden md:block">
-          <AdSlot
-            placement="header-leaderboard"
-            label="Header Leaderboard"
-            size="728×90"
-            height={90}
-            preview
-          />
-        </div>
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+          {/* Kolom utama */}
+          <div className="min-w-0 space-y-10">
+            {/* Iklan leaderboard (desktop) di atas Trending */}
+            <div className="hidden md:block">
+              <AdSlot
+                placement="header-leaderboard"
+                label="Header Leaderboard"
+                size="728×90"
+                height={90}
+                preview
+              />
+            </div>
 
-        {/* Hero 1 + 2 statis */}
-        <section aria-label="Berita utama" className="mb-8">
-          <Hero main={heroMain} secondary={heroSecondary} />
-        </section>
+            <TrendingBlock articles={trending} />
 
-        {/* Iklan mobile pertama: tepat setelah seluruh area hero */}
-        <div className="mb-8 md:hidden">
-          <AdSlot
-            placement="mobile-after-hero"
-            label="Mobile Setelah Hero"
-            size="320×100"
-            height={100}
-            preview
-          />
-        </div>
+            {/* Iklan mobile pertama: tepat setelah blok pembuka */}
+            <div className="md:hidden">
+              <AdSlot
+                placement="mobile-after-hero"
+                label="Mobile Setelah Hero"
+                size="320×100"
+                height={100}
+                preview
+              />
+            </div>
 
-        {/* Konten + sidebar (desktop 8:4) */}
-        <div className="grid gap-8 lg:grid-cols-12">
-          {/* Konten utama */}
-          <div className="lg:col-span-8">
+            <HighlightCarousel articles={highlight} />
+
             <section aria-labelledby="berita-terbaru">
               <div id="berita-terbaru">
-                <SectionHeading title="Berita Terbaru" href="/terbaru" />
+                <SectionHeading title="Berita Terbaru" href="/terbaru" icon={ClockIcon} />
               </div>
-
-              {/* Mobile: seluruh daftar sebagai list horizontal (03-HOMEPAGE-MOBILE.md) */}
-              <div className="divide-y divide-line sm:hidden">
-                {feed.map((article) => (
-                  <HorizontalNewsRow key={article.slug} article={article} />
+              <div className="divide-y divide-line">
+                {feed.map((article, i) => (
+                  <div key={article.slug}>
+                    <HorizontalNewsRow article={article} />
+                    {/* Iklan in-feed setelah baris ke-4 */}
+                    {i === 3 && (
+                      <div className="py-4">
+                        <AdSlot
+                          placement="in-feed"
+                          label="In-Feed"
+                          size="728×90"
+                          height={90}
+                          preview
+                        />
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
-
-              {/* Desktop/tablet: mixed grid kartu bergambar + list horizontal */}
-              <div className="hidden sm:block">
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {gridLatest.map((article, i) => (
-                    <StandardNewsCard
-                      key={article.slug}
-                      article={article}
-                      priority={i === 0}
-                    />
-                  ))}
-                </div>
-
-                {/* Iklan in-feed horizontal di antara blok konten */}
-                <div className="my-6">
-                  <AdSlot
-                    placement="in-feed"
-                    label="In-Feed"
-                    size="728×90"
-                    height={90}
-                    preview
-                  />
-                </div>
-
-                {/* List horizontal (mixed layout) */}
-                <div className="divide-y divide-line">
-                  {listLatest.map((article) => (
-                    <HorizontalNewsRow key={article.slug} article={article} />
-                  ))}
-                </div>
-              </div>
+              <Link
+                href="/terbaru"
+                className="mt-6 block rounded-lg border border-line py-3 text-center text-sm font-semibold text-charcoal/80 transition-colors hover:border-brand hover:text-brand"
+              >
+                Lihat Berita Lainnya
+              </Link>
             </section>
-
-            {/* Jabar Hari Ini */}
-            {jabarHariIni.length > 0 && (
-              <div className="mt-10">
-                <JabarHariIni articles={jabarHariIni} />
-              </div>
-            )}
-
-            {/* Kategori Pilihan */}
-            <div className="mt-10">
-              <KategoriPilihan categories={featuredCategories} />
-            </div>
           </div>
 
-          {/* Sidebar — Most Read + iklan sidebar; sticky di desktop */}
-          <aside className="lg:col-span-4">
-            <div className="lg:sticky lg:top-4 space-y-6">
-              {mostRead24h.length + mostRead7d.length > 0 && (
-                <MostRead data24h={mostRead24h} data7d={mostRead7d} />
+          {/* Kolom kanan — urutan: Ikuti Kami → Statistik Portal → iklan; sticky di desktop lebar */}
+          <aside className="min-w-0">
+            <div className="space-y-6 xl:sticky xl:top-6">
+              <SocialTiles />
+              {stats && (
+                <PortalStats totalViews={stats.totalViews} published30d={stats.published30d} />
               )}
-
-              {/* Tag Populer */}
-              {popularTags.length > 0 && (
-                <section aria-labelledby="tag-populer">
-                  <div id="tag-populer">
-                    <SectionHeading title="Tag Populer" />
-                  </div>
-                  <div className="rounded-[var(--radius-card)] border border-line bg-base p-4">
-                    <PopularTags tags={popularTags} />
-                  </div>
-                </section>
-              )}
-
               <AdSlot
                 placement="sidebar"
                 label="Sidebar (Medium Rectangle)"

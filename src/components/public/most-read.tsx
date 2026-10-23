@@ -29,8 +29,8 @@ export function MostRead({
     <section aria-labelledby="most-read-heading">
       <div id="most-read-heading">
         <SectionHeading
-          title="Trending"
-          icon={<FlameIcon className="h-5 w-5 text-brand" />}
+          title="Terpopuler"
+          icon={FlameIcon}
         />
       </div>
       <div className="rounded-[var(--radius-card)] border border-line bg-base p-4">

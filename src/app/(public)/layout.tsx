@@ -1,10 +1,14 @@
 import { SiteHeader } from "@/components/public/site-header";
+import { SiteSidebar } from "@/components/public/site-sidebar";
 import { SiteFooter } from "@/components/public/site-footer";
-import { MobileBottomNav } from "@/components/public/mobile-bottom-nav";
+import { Suspense } from "react";
+import { PageTransition } from "@/components/public/page-transition";
+import { StickyBottomAd } from "@/components/public/sticky-bottom-ad";
 
 /**
- * Layout shell publik: header → konten → footer → bottom nav (mobile).
- * Padding bawah di mobile agar bottom nav tidak menutupi footer/konten.
+ * Layout shell publik.
+ * Desktop (≥ lg): [sidebar navigasi kiri sticky │ konten] → footer selebar layar.
+ * Mobile/tablet: header atas (menu lewat drawer) → konten → footer.
  */
 export default function PublicLayout({
   children,
@@ -20,12 +24,21 @@ export default function PublicLayout({
       >
         Lewati ke konten
       </a>
-      <SiteHeader />
-      <main id="konten" tabIndex={-1} className="flex-1 outline-none pb-[calc(var(--h-bottomnav-mobile)+env(safe-area-inset-bottom))] md:pb-0">
-        {children}
-      </main>
+      <div className="flex flex-1">
+        <SiteSidebar />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <SiteHeader />
+          <main id="konten" tabIndex={-1} className="flex-1 outline-none">
+            <PageTransition>{children}</PageTransition>
+          </main>
+        </div>
+      </div>
+      {/* Footer selebar layar (di bawah sidebar juga) */}
       <SiteFooter />
-      <MobileBottomNav />
+      {/* Banner iklan melayang bawah (placement FOOTER), bisa ditutup */}
+      <Suspense fallback={null}>
+        <StickyBottomAd />
+      </Suspense>
     </div>
   );
 }

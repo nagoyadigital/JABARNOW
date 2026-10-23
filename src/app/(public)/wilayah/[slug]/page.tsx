@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getRegionBySlug, listPublishedByRegion } from "@/lib/articles";
 import { ArticleArchiveList } from "@/components/public/article-list";
 import { SectionHeading } from "@/components/public/section-heading";
+import { MapPinIcon } from "@/components/common/icons";
 import { DEMO_CONTENT } from "@/lib/demo";
 import { siteConfig } from "@/lib/site-config";
 import { breadcrumbLd, jsonLdString } from "@/lib/seo";
@@ -48,7 +49,7 @@ export default async function WilayahDetailPage({
           ),
         }}
       />
-      <SectionHeading title={`Berita ${name}`} as="h1" />
+      <SectionHeading title={`Berita ${name}`} as="h1" icon={MapPinIcon} />
       <ArticleArchiveList items={items} emptyText="Belum ada artikel di wilayah ini." />
     </div>
   );
